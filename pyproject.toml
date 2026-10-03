@@ -1,0 +1,52 @@
+[project]
+name = "onec-ops"
+version = "0.1.0.dev0"
+description = "CLI-утилита и Agent Skill для пакетных операций 1С:Предприятие"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+keywords = ["1c", "onec", "cli", "automation", "agent-skill"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+dependencies = [
+    "platformdirs>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.12",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+onec-ops = "scripts.onec_ops:main"
+
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scripts*"]
+exclude = ["inputs*", "outputs*", "references*", "assets*", "agents*", "tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --cov=scripts --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

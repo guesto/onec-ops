@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log
+logs/
+
+# Тестовые данные 1С (могут быть конфиденциальными)
+inputs/base1c/
+inputs/etc1c/
+inputs/storage1c/
+!inputs/.gitkeep
+
+# Выходные артефакты
+outputs/*
+!outputs/.gitkeep
+*.epf
+*.erf
+*.cfe
+*.dt
+*.cf
+*.cfu
