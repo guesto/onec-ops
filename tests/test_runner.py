@@ -40,7 +40,7 @@ def test_build_command_uses_xvfb_without_display(tmp_path, monkeypatch):
     monkeypatch.setattr("scripts.lib.runner.shutil.which", lambda name: "/usr/bin/xvfb-run")
 
     assert build_command(["DESIGNER"], RunContext(platform)) == [
-        "xvfb-run", "-a", str(platform), "DESIGNER"
+        "xvfb-run", "-a", "-s", "-nolisten unix", str(platform), "DESIGNER"
     ]
 
 

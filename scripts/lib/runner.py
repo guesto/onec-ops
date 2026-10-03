@@ -43,7 +43,10 @@ def build_command(args: list[str], ctx: RunContext) -> list[str]:
         return [platform, *args]
 
     if shutil.which("xvfb-run"):
-        return ["xvfb-run", "-a", platform, *args]
+        # -a: автоматический выбор дисплея.
+        # -s "-nolisten unix": не создавать сокет в /tmp/.X11-unix,
+        # чтобы не требовать прав root (см. проблему с euid != 0).
+        return ["xvfb-run", "-a", "-s", "-nolisten unix", platform, *args]
 
     raise XvfbNotAvailable("Нет DISPLAY и не найден xvfb-run. Установите xvfb или задайте DISPLAY.")
 
