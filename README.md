@@ -80,6 +80,44 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 Показывает команду, но не запускает 1С.
 
+## Использование с Codex
+
+### Установка Skill
+
+Codex требует реальные файлы (не symlinks) в ~/.codex/skills/:
+
+    mkdir -p ~/.codex/skills/onec-ops
+    cp SKILL.md ~/.codex/skills/onec-ops/
+    cp -r agents ~/.codex/skills/onec-ops/
+    cp -r references ~/.codex/skills/onec-ops/
+
+Перезапустите Codex. В новом чате спросите "какие skills ты видишь?" —
+в списке должен появиться onec-ops.
+
+### Требования к окружению Codex
+
+Codex должен работать БЕЗ sandbox, иначе X11 заблокирован и 1С
+не запустится. Отключите sandbox в ~/.codex/config.toml:
+
+    sandbox_mode = "danger-full-access"
+    approval_policy = "on-request"
+
+Или запускайте Codex с флагом:
+
+    codex --dangerously-bypass-approvals-and-sandbox
+
+**Внимание:** это даёт Codex полный доступ к системе. Используйте
+только в доверенных средах.
+
+### Пример
+
+    Используй skill onec-ops, чтобы создать файловую базу 1С
+    в /tmp/test-ib
+
+Codex выполнит:
+
+    onec-ops create-ib --type file --path /tmp/test-ib
+
 ## Разработка
 
     pytest -v              # тесты
@@ -95,4 +133,4 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Лицензия
 
-MIT
+MIT — см. [LICENSE](LICENSE).

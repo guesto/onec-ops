@@ -39,3 +39,7 @@ outputs/*
 *.dt
 *.cf
 *.cfu
+
+# Локальные копии Skill для агентов
+.agents/
+.claude/
