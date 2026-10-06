@@ -6,12 +6,14 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.2.0** (в разработке).
+**Текущая версия: v0.2.1** (в разработке).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
 - `create-ib --type file` — создание файловой ИБ.
 - `dump-config` / `load-config` — выгрузка и загрузка конфигурации в XML.
+- `dump-cf` / `load-cf` — выгрузка и загрузка конфигурации в `.cf`.
+- `dump-cfu` / `load-cfu` — выгрузка и загрузка расширений в `.cfu`.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -90,6 +92,31 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 Dry-run требует существующей ИБ и корректного каталога загрузки,
 показывает команду с абсолютными путями и пропускает запуск 1С.
 Подробнее: [справочник команд](references/commands.md).
+
+### Конфигурация в .cf
+
+    onec-ops dump-cf --ib /path/to/ib --to /path/to/base.cf
+    onec-ops load-cf --ib /path/to/ib --from /path/to/base.cf --update-db-cfg
+
+### Расширения в .cfu
+
+    onec-ops dump-cfu --ib /path/to/ib --to /path/to/ext.cfu --extension Имя
+    onec-ops load-cfu --ib /path/to/ib --from /path/to/ext.cfu --extension Имя --update-db-cfg
+
+Команды выгрузки создают родительские каталоги и предупреждают о перезаписи
+существующего файла. Команды загрузки требуют существующий непустой файл.
+Имя расширения обязательно для `dump-cfu` и `load-cfu`.
+`--update-db-cfg` обновляет конфигурацию БД после загрузки; без этого флага
+передаётся только операция загрузки. Все четыре команды требуют `--ib`.
+
+Для проверки команды без запуска 1С:
+
+    onec-ops --ib /path/to/ib --dry-run dump-cf --to /tmp/base.cf
+    onec-ops --ib /path/to/ib --dry-run load-cfu --from /path/to/ext.cfu --extension Имя --update-db-cfg
+
+Dry-run сохраняет проверки входного файла и ИБ. Для выгрузки он подготавливает
+родительский каталог, но файл не создаёт. Подробности — в
+[справочнике команд](references/commands.md).
 
 ### Общие параметры
 
