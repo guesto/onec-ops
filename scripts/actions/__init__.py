@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from .base import Action
 from .create_ib_file import CreateIbFileAction
+from .dump_config import DumpConfigAction
+from .load_config import LoadConfigAction
 
 
 def get_actions() -> list[Action]:
     """Возвращает доступные действия CLI."""
-    return [CreateIbFileAction()]
+    return [CreateIbFileAction(), DumpConfigAction(), LoadConfigAction()]

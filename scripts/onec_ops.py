@@ -23,6 +23,7 @@ _LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
 
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Добавляет общие параметры CLI."""
+    parser.add_argument("--ib", type=Path, default=argparse.SUPPRESS, help="Путь к файловой ИБ")
     parser.add_argument("--platform", type=Path, default=argparse.SUPPRESS, help="Путь к 1cv8")
     parser.add_argument(
         "--log-level", choices=_LOG_LEVELS, default=argparse.SUPPRESS, help="Уровень логирования"
