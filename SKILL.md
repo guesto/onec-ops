@@ -72,32 +72,11 @@ description: Пакетные операции с 1С:Предприятие 8. 
 
 ## Ограничения sandbox-режима Codex
 
-В sandbox-режиме Codex (по умолчанию `workspace-write`) запуск 1С невозможен: Xvfb не может создать X-сервер, потому что /tmp/.X11-unix изолирован в песочнице. 1С падает с ошибкой:
+Если Xvfb не запускается (в логе: "Xvfb не запущен"), проверь изоляцию `/tmp`
+через tmpfs. Попроси пользователя добавить настройки проекта.
+Подробности — в [references/troubleshooting.md](references/troubleshooting.md).
 
-    *** Unable to initialize GTK+ or connect to the windowing system.
-
-### Решение
-
-Отключить sandbox в ~/.codex/config.toml:
-
-    sandbox_mode = "danger-full-access"
-    approval_policy = "on-request"
-
-Или запускать Codex с флагом:
-
-    codex --dangerously-bypass-approvals-and-sandbox
-
-После этого onec-ops работает штатно: утилита сама вызовет xvfb-run при необходимости.
-
-### Что НЕ делать
-
-- Не запускай Xvfb вручную.
-- Не используй sudo для изменения владельцев каталогов.
-- Не копируй готовые базы вместо создания.
-
-Просто вызови:
-
-    onec-ops create-ib --type file --path /path/to/ib
+Не пытайся обойти проблему самостоятельно.
 
 ## Ссылки
 
@@ -106,3 +85,4 @@ description: Пакетные операции с 1С:Предприятие 8. 
 - [docs/v0.1.0.md](docs/v0.1.0.md) — ТЗ создания ИБ
 - [docs/v0.2.0.md](docs/v0.2.0.md) — ТЗ конфигурации XML
 - [references/commands.md](references/commands.md) — параметры и примеры команд
+- [references/troubleshooting.md](references/troubleshooting.md) — диагностика sandbox и Xvfb

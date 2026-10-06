@@ -123,20 +123,31 @@ Codex требует реальные файлы (не symlinks) в ~/.codex/ski
 Перезапустите Codex. В новом чате спросите "какие skills ты видишь?" —
 в списке должен появиться onec-ops.
 
-### Требования к окружению Codex
+### Настройка sandbox
 
-Codex должен работать БЕЗ sandbox, иначе X11 заблокирован и 1С
-не запустится. Отключите sandbox в ~/.codex/config.toml:
+В Linux-окружении с режимом `workspace-write` Codex может изолировать `/tmp`
+через tmpfs, из-за чего Xvfb не запускается. Если диагностика подтверждает
+эту причину, добавьте настройки для доверенного проекта в
+`<путь-к-проекту>/.codex/config.toml`:
 
     sandbox_mode = "danger-full-access"
     approval_policy = "on-request"
 
-Или запускайте Codex с флагом:
+Локальные настройки проекта загружаются только для доверенных проектов.
+В `~/.codex/config.toml` таблица `[projects."<путь-к-проекту>"]` задаёт
+`trust_level`; настройки sandbox размещайте в конфиге самого проекта.
+См. [официальную документацию Codex](https://learn.chatgpt.com/docs/config-file/config-basic).
 
-    codex --dangerously-bypass-approvals-and-sandbox
+Или запустите Codex из каталога проекта с флагами:
 
-**Внимание:** это даёт Codex полный доступ к системе. Используйте
-только в доверенных средах.
+    codex --sandbox danger-full-access --ask-for-approval on-request
+
+**Внимание:** `danger-full-access` даёт Codex полный доступ к системе.
+Используйте только для доверенных проектов. После изменения проверьте
+применение настроек; если сессия сохраняет прежнюю изоляцию, начните новую.
+
+Диагностика, проверка и ограничения:
+[references/troubleshooting.md](references/troubleshooting.md).
 
 ### Пример
 

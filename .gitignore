@@ -43,3 +43,12 @@ outputs/*
 # Локальные копии Skill для агентов
 .agents/
 .claude/
+
+# Локальные настройки Codex
+.codex/
+
+# Тестовые данные 1С
+inputs/base1c/
+inputs/base2c/
+inputs/etc1c/
+inputs/storage1c/
