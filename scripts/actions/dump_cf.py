@@ -1,4 +1,4 @@
-"""Действие выгрузки конфигурации в .cf."""
+"""Действие выгрузки конфигурации и расширений."""
 
 from __future__ import annotations
 
@@ -15,16 +15,21 @@ logger = logging.getLogger(__name__)
 
 
 class DumpCfAction(Action):
-    """Выгружает конфигурацию 1С в файл .cf."""
+    """Выгружает конфигурацию 1С в файл .cf или .cfe."""
 
     name = "dump-cf"
-    help = "Выгрузить конфигурацию в .cf"
+    help = "Выгрузить конфигурацию (.cf) или расширение (.cfe)"
     requires_ib = True
     path_args = ("to",)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Добавляет аргументы dump-cf."""
-        parser.add_argument("--to", type=Path, required=True, help="Путь к выходному .cf")
+        parser.add_argument("--to", type=Path, required=True, help="Путь к выходному .cf или .cfe")
+
+        parser.add_argument(
+            "--extension",
+            help="Имя расширения. Обязателен для файлов .cfe, запрещён для .cf.",
+        )
 
     def validate(self, ns: argparse.Namespace) -> None:
         """Проверяет ИБ и предупреждает о перезаписи файла."""
@@ -32,14 +37,21 @@ class DumpCfAction(Action):
         if ns.to is None:
             raise OneCOpsError("Обязательно укажите --to.")
         path = Path(ns.to)
+        suffix = path.suffix.lower()
+        if suffix == ".cfe" and not ns.extension:
+            raise OneCOpsError("Для файлов .cfe требуется --extension.")
+        if suffix == ".cf" and ns.extension:
+            raise OneCOpsError("--extension запрещён для .cf.")
+        if suffix not in (".cf", ".cfe"):
+            logger.warning("Неизвестное расширение файла %s: ожидается .cf или .cfe", path)
         if path.exists():
             if not path.is_file():
                 raise OneCOpsError(f"--to должен указывать на файл: {path}")
             logger.warning("Файл выгрузки существует и будет перезаписан: %s", path)
 
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
-        """Собирает DumpCfg для основной конфигурации."""
-        return [
+        """Собирает DumpCfg для конфигурации или расширения."""
+        args = [
             "DESIGNER",
             "/F",
             str(ns.ib),
@@ -47,6 +59,9 @@ class DumpCfAction(Action):
             "/DumpCfg",
             str(Path(ns.to).resolve()),
         ]
+        if ns.extension:
+            args += ["-Extension", ns.extension]
+        return args
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
         """Создаёт родительский каталог выходного файла."""

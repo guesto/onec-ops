@@ -7,6 +7,20 @@
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-10-06
+
+### Changed
+
+- `dump-cf` и `load-cf` работают с конфигурацией `.cf` и расширениями `.cfe` через `--extension`.
+- Для `.cfe` требуется `--extension`; для `.cf` эта опция запрещена. Другие суффиксы вызывают WARNING.
+- Исправлена семантика форматов: `.cfu` — обновление конфигурации, `.cfe` — расширение.
+
+### Removed
+
+- Команды `dump-cfu` и `load-cfu`, их действия и тесты.
+
+## [0.2.1]
+
 ### Added
 
 - Команда `dump-cf` — выгрузка конфигурации в .cf.
@@ -40,5 +54,7 @@
   Решение: `sandbox_mode = "danger-full-access"` в `~/.codex/config.toml`.
 - `create-ib --type server` — заглушка (v0.1.1 отложен).
 
-[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/guesto/onec-ops/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/guesto/onec-ops/compare/v0.1.0...v0.2.1
 [0.1.0]: https://github.com/guesto/onec-ops/releases/tag/v0.1.0

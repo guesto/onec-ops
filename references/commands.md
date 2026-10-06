@@ -157,19 +157,20 @@ onec-ops --ib ./base1c --dry-run load-config --from ./xml --update-db-cfg
 
 ## dump-cf
 
-Выгружает конфигурацию 1С в файл `.cf`.
+Выгружает конфигурацию `.cf` или расширение `.cfe` с выбором `--extension NAME`.
 
 ### Синтаксис
 
 ```sh
-onec-ops dump-cf --ib PATH --to PATH
+onec-ops dump-cf --ib PATH --to PATH [--extension NAME]
 ```
 
 ### Параметры
 
 ```text
 --ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
---to PATH                  Путь к выходному .cf (обязательный)
+--to PATH            Путь к .cf или .cfe (обязательный)
+--extension NAME        Имя расширения: обязательно для .cfe, запрещено для .cf
 ```
 
 ### Поведение
@@ -177,66 +178,34 @@ onec-ops dump-cf --ib PATH --to PATH
 1. Проверяет наличие файла `1Cv8.1CD` в ИБ.
 2. Создаёт родительский каталог выходного файла, включая недостающих родителей.
 3. Предупреждает о перезаписи существующего файла; каталог вместо файла — ошибка.
-4. Передаёт 1С `/DumpCfg`; пути становятся абсолютными.
+4. Передаёт 1С `/DumpCfg` и при выборе расширения `-Extension NAME`; пути абсолютные.
+   `.cfe` без `--extension` и `.cf` с этой опцией — ошибки; другой суффикс — WARNING.
 5. Dry-run выполняет проверки и пропускает запуск 1С. Родительский каталог создаётся, выходной файл — нет.
 
 ### Примеры
 
 ```sh
 onec-ops dump-cf --ib ./base1c --to ./files/base.cf
+onec-ops dump-cf --ib ./base1c --to ./files/ext.cfe --extension TestExt
 onec-ops --dry-run dump-cf --ib ./base1c --to ./files/base.cf
 ```
 
-
-## dump-cfu
-
-Выгружает расширение конфигурации 1С в файл `.cfu`.
-
-### Синтаксис
-
-```sh
-onec-ops dump-cfu --ib PATH --to PATH --extension NAME
-```
-
-### Параметры
-
-```text
---ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
---to PATH                  Путь к выходному .cfu (обязательный)
---extension NAME        Имя расширения конфигурации (обязательный)
-```
-
-### Поведение
-
-1. Проверяет наличие файла `1Cv8.1CD` в ИБ.
-2. Создаёт родительский каталог выходного файла, включая недостающих родителей.
-3. Предупреждает о перезаписи существующего файла; каталог вместо файла — ошибка.
-4. Передаёт 1С `/DumpCfg` и `-Extension NAME`; пути становятся абсолютными.
-5. Dry-run выполняет проверки и пропускает запуск 1С. Родительский каталог создаётся, выходной файл — нет.
-
-### Примеры
-
-```sh
-onec-ops dump-cfu --ib ./base1c --to ./files/ext.cfu --extension TestExt
-onec-ops --dry-run dump-cfu --ib ./base1c --to ./files/ext.cfu --extension TestExt
-```
-
-
 ## load-cf
 
-Загружает конфигурацию 1С из файла `.cf`.
+Загружает конфигурацию `.cf` или расширение `.cfe` с выбором `--extension NAME`.
 
 ### Синтаксис
 
 ```sh
-onec-ops load-cf --ib PATH --from PATH [--update-db-cfg]
+onec-ops load-cf --ib PATH --from PATH [--extension NAME] [--update-db-cfg]
 ```
 
 ### Параметры
 
 ```text
 --ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
---from PATH                Путь к входному .cf (обязательный)
+--from PATH          Путь к .cf или .cfe (обязательный)
+--extension NAME        Имя расширения: обязательно для .cfe, запрещено для .cf
 --update-db-cfg         Обновить конфигурацию БД после загрузки
 ```
 
@@ -245,49 +214,19 @@ onec-ops load-cf --ib PATH --from PATH [--update-db-cfg]
 1. Проверяет наличие файла `1Cv8.1CD` в ИБ.
 2. Проверяет существование входного файла и размер больше нуля. Каталог не принимается.
 3. С `--update-db-cfg` добавляет `/UpdateDBCfg` после параметров загрузки.
-4. Передаёт 1С `/LoadCfg`; пути становятся абсолютными.
+4. Передаёт 1С `/LoadCfg` и при выборе расширения `-Extension NAME`; пути абсолютные.
+   `.cfe` без `--extension` и `.cf` с этой опцией — ошибки; другой суффикс — WARNING.
 5. Dry-run выполняет проверки и пропускает запуск 1С.
 
 ### Примеры
 
 ```sh
 onec-ops load-cf --ib ./base1c --from ./files/base.cf
+onec-ops load-cf --ib ./base1c --from ./files/ext.cfe --extension TestExt
 onec-ops load-cf --ib ./base1c --from ./files/base.cf --update-db-cfg
+onec-ops load-cf --ib ./base1c --from ./files/ext.cfe --extension TestExt --update-db-cfg
 onec-ops --dry-run load-cf --ib ./base1c --from ./files/base.cf
 ```
 
-
-## load-cfu
-
-Загружает расширение конфигурации 1С из файла `.cfu`.
-
-### Синтаксис
-
-```sh
-onec-ops load-cfu --ib PATH --from PATH --extension NAME [--update-db-cfg]
-```
-
-### Параметры
-
-```text
---ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
---from PATH                Путь к входному .cfu (обязательный)
---extension NAME        Имя расширения конфигурации (обязательный)
---update-db-cfg         Обновить конфигурацию БД после загрузки
-```
-
-### Поведение
-
-1. Проверяет наличие файла `1Cv8.1CD` в ИБ.
-2. Проверяет существование входного файла и размер больше нуля. Каталог не принимается.
-3. С `--update-db-cfg` добавляет `/UpdateDBCfg` после параметров загрузки.
-4. Передаёт 1С `/LoadCfg` и `-Extension NAME`; пути становятся абсолютными.
-5. Dry-run выполняет проверки и пропускает запуск 1С.
-
-### Примеры
-
-```sh
-onec-ops load-cfu --ib ./base1c --from ./files/ext.cfu --extension TestExt
-onec-ops load-cfu --ib ./base1c --from ./files/ext.cfu --extension TestExt --update-db-cfg
-onec-ops --dry-run load-cfu --ib ./base1c --from ./files/ext.cfu --extension TestExt
-```
+Формат `.cfu` означает обновление конфигурации и не поддерживается этими командами
+как отдельная операция обновления (планируется v0.2.4).
