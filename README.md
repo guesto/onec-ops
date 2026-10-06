@@ -6,11 +6,12 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.1.0** (в разработке).
+**Текущая версия: v0.2.0** (в разработке).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
 - `create-ib --type file` — создание файловой ИБ.
+- `dump-config` / `load-config` — выгрузка и загрузка конфигурации в XML.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -63,10 +64,38 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
     onec-ops create-ib --type file --path /path/to/ib --force --yes
 
+### Выгрузка конфигурации в XML
+
+    onec-ops dump-config --to /path/to/xml --ib /path/to/ib
+
+По умолчанию используется формат `hierarchical`; для плоской структуры
+добавьте `--format plain`. Каталог создаётся автоматически; если он
+непустой, команда предупреждает о возможной перезаписи файлов.
+
+### Загрузка конфигурации из XML
+
+    onec-ops load-config --from /path/to/xml --ib /path/to/ib --update-db-cfg
+
+Каталог должен существовать и содержать `Configuration.xml`. Флаг
+`--update-db-cfg` обновляет конфигурацию БД после загрузки. Для обеих
+команд `--ib` указывает на существующую файловую ИБ с `1Cv8.1CD`.
+
+Для работы с одним расширением укажите `--extension NAME`, со всеми —
+`--all-extensions`. Эти параметры взаимоисключающие. При загрузке одного
+расширения наличие `Configuration.xml` не проверяется.
+
+    onec-ops --ib /path/to/ib --dry-run dump-config --to /path/to/xml
+    onec-ops --ib /path/to/ib --dry-run load-config --from /path/to/xml --update-db-cfg
+
+Dry-run требует существующей ИБ и корректного каталога загрузки,
+показывает команду с абсолютными путями и пропускает запуск 1С.
+Подробнее: [справочник команд](references/commands.md).
+
 ### Общие параметры
 
 Все команды поддерживают:
 
+    --ib PATH              Путь к файловой ИБ (для команд конфигурации)
     --platform PATH        Путь к 1cv8 (по умолчанию — из конфига или ОС)
     --config PATH          Путь к TOML-конфигу
     --log-level LEVEL      DEBUG / INFO / WARNING / ERROR
