@@ -6,14 +6,13 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.2.1** (в разработке).
+**Текущая версия: v0.2.2**.
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
 - `create-ib --type file` — создание файловой ИБ.
 - `dump-config` / `load-config` — выгрузка и загрузка конфигурации в XML.
-- `dump-cf` / `load-cf` — выгрузка и загрузка конфигурации в `.cf`.
-- `dump-cfu` / `load-cfu` — выгрузка и загрузка расширений в `.cfu`.
+- `dump-cf` / `load-cf` — конфигурация `.cf` и расширения `.cfe` с `--extension`.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -98,21 +97,23 @@ Dry-run требует существующей ИБ и корректного �
     onec-ops dump-cf --ib /path/to/ib --to /path/to/base.cf
     onec-ops load-cf --ib /path/to/ib --from /path/to/base.cf --update-db-cfg
 
-### Расширения в .cfu
+### Расширения в .cfe
 
-    onec-ops dump-cfu --ib /path/to/ib --to /path/to/ext.cfu --extension Имя
-    onec-ops load-cfu --ib /path/to/ib --from /path/to/ext.cfu --extension Имя --update-db-cfg
+    onec-ops dump-cf --ib /path/to/ib --to /path/to/ext.cfe --extension Имя
+    onec-ops load-cf --ib /path/to/ib --from /path/to/ext.cfe --extension Имя --update-db-cfg
 
 Команды выгрузки создают родительские каталоги и предупреждают о перезаписи
 существующего файла. Команды загрузки требуют существующий непустой файл.
-Имя расширения обязательно для `dump-cfu` и `load-cfu`.
+Для файлов `.cfe` параметр `--extension Имя` обязателен; для `.cf` он запрещён.
+Другие суффиксы допускаются с предупреждением. `.cfu` — обновление
+конфигурации, его отдельная операция запланирована на v0.2.4.
 `--update-db-cfg` обновляет конфигурацию БД после загрузки; без этого флага
-передаётся только операция загрузки. Все четыре команды требуют `--ib`.
+передаётся только операция загрузки. Обе команды требуют `--ib`.
 
 Для проверки команды без запуска 1С:
 
     onec-ops --ib /path/to/ib --dry-run dump-cf --to /tmp/base.cf
-    onec-ops --ib /path/to/ib --dry-run load-cfu --from /path/to/ext.cfu --extension Имя --update-db-cfg
+    onec-ops --ib /path/to/ib --dry-run load-cf --from /path/to/ext.cfe --extension Имя --update-db-cfg
 
 Dry-run сохраняет проверки входного файла и ИБ. Для выгрузки он подготавливает
 родительский каталог, но файл не создаёт. Подробности — в

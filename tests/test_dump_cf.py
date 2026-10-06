@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from scripts.actions.dump_cf import DumpCfAction
+from scripts.lib.exceptions import OneCOpsError
 from scripts.lib.runner import RunContext
 from scripts.onec_ops import main
 
@@ -73,7 +74,11 @@ def test_validate_warns_about_overwrite(ns, caplog):
     assert ns.to.read_bytes() == b"original"
 
 
-def test_cli_runs_with_mocked_subprocess(ns, ctx, mocker, subprocess_mock):
+@pytest.mark.parametrize("extension", [None, "TestExt"])
+def test_cli_runs_with_mocked_subprocess(ns, ctx, mocker, subprocess_mock, extension):
+    ns.extension = extension
+    if extension:
+        ns.to = ns.to.with_suffix(".cfe")
     ctx.platform_path.touch()
     ctx.platform_path.chmod(0o755)
     mocker.patch("scripts.onec_ops.check_environment")
@@ -88,9 +93,62 @@ def test_cli_runs_with_mocked_subprocess(ns, ctx, mocker, subprocess_mock):
         str(ns.to),
     ]
 
+    if extension:
+        arguments += ["--extension", extension]
+
     assert main(arguments) == 0
 
     subprocess_mock.assert_called_once()
     expected = DumpCfAction().build_1c_args(ns, ctx)
     assert subprocess_mock.call_args.args[0][-len(expected) :] == expected
     assert subprocess_mock.call_args.kwargs["timeout"] == 600
+
+
+@pytest.mark.parametrize("suffix", [".cfe", ".CFE"])
+def test_validate_cfe_requires_extension(ns, suffix):
+    ns.to = ns.to.with_suffix(suffix)
+    with pytest.raises(OneCOpsError, match="требуется --extension"):
+        DumpCfAction().validate(ns)
+
+
+@pytest.mark.parametrize("suffix", [".cf", ".CF"])
+def test_validate_cf_forbids_extension(ns, suffix):
+    ns.to = ns.to.with_suffix(suffix)
+    ns.extension = "TestExt"
+    with pytest.raises(OneCOpsError, match="--extension запрещён для .cf"):
+        DumpCfAction().validate(ns)
+
+
+@pytest.mark.parametrize("extension", [None, "TestExt"])
+def test_validate_other_extension_warns(ns, caplog, extension):
+    ns.to = ns.to.with_suffix(".bin")
+    ns.extension = extension
+    with caplog.at_level("WARNING"):
+        DumpCfAction().validate(ns)
+    assert "Неизвестное расширение файла" in caplog.text
+    assert str(ns.to) in caplog.text
+
+
+def test_validate_cfe_with_extension_ok(ns):
+    ns.to = ns.to.with_suffix(".cfe")
+    ns.extension = "TestExt"
+    DumpCfAction().validate(ns)
+
+
+def test_build_1c_args_without_extension(ns, ctx):
+    parser = argparse.ArgumentParser()
+    action = DumpCfAction()
+    action.add_arguments(parser)
+    parsed = parser.parse_args(["--to", str(ns.to)])
+    parsed.ib = ns.ib
+    args = action.build_1c_args(parsed, ctx)
+    assert parsed.extension is None
+    assert args == _base_args(ns)
+    assert "-Extension" not in args
+
+
+def test_build_1c_args_with_extension(ns, ctx):
+    ns.to = ns.to.with_suffix(".cfe")
+    ns.extension = "TestExt"
+    expected = [*_base_args(ns), "-Extension", "TestExt"]
+    assert DumpCfAction().build_1c_args(ns, ctx) == expected
