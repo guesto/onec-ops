@@ -71,10 +71,31 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `load-config` — загрузка конфигурации из XML.
   - `--from <каталог>`
   - `--update-db-cfg` (флаг)
-- Round-trip тест: `dump-config` → `load-config` → `dump-config` → сравнение.
+- Round-trip тест.
 - Unit-тесты для validate и build_1c_args.
-- Skill пополняется двумя новыми командами.
-- README: примеры работы с конфигурацией.
+- Skill: разделы `dump-config` / `load-config`.
+- README: примеры.
+
+### v0.2.1 — Файловые форматы (.cf / .cfu) [ПЛАНИРУЕТСЯ]
+
+**Приоритет:** высокий.
+
+- `dump-cf` — выгрузка конфигурации в `.cf` (`/DumpCfg`).
+- `load-cf` — загрузка конфигурации из `.cf` (`/LoadCfg`).
+- `dump-cfu` — выгрузка расширения в `.cfu` (`/DumpCfg -Extension`).
+- `load-cfu` — загрузка расширения из `.cfu` (`/LoadCfg -Extension`).
+- Round-trip тесты.
+- Skill: четыре новые команды.
+
+### v0.2.2 — GUI: открытие клиентов [ПЛАНИРУЕТСЯ]
+
+**Приоритет:** средний.
+
+- `open-designer` — открыть Конфигуратор (`DESIGNER /F <ib>`).
+- `open-enterprise` — открыть клиент 1С (`ENTERPRISE /F <ib>`).
+- Опции: `--user`, `--password`, `--execute`, `--c`, `--no-wait`.
+- Особенность: команды **ждут закрытия окна** (если не `--no-wait`).
+- Skill: разделы про GUI с оговоркой, что **требуется DISPLAY**.
 
 ### v0.3.0 — Внешние обработки (XML) [ПЛАНИРУЕТСЯ]
 
