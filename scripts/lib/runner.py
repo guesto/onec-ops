@@ -26,6 +26,7 @@ class RunContext:
     log_level: str = "INFO"
     dry_run: bool = False
     timeout: int = 600
+    requires_gui: bool = False
 
 
 def _check_platform(platform_path: Path) -> None:
@@ -39,7 +40,7 @@ def build_command(args: list[str], ctx: RunContext) -> list[str]:
     _check_platform(ctx.platform_path)
     platform = str(ctx.platform_path)
 
-    if sys.platform == "win32" or os.environ.get("DISPLAY"):
+    if sys.platform == "win32" or ctx.requires_gui or os.environ.get("DISPLAY"):
         return [platform, *args]
 
     if shutil.which("xvfb-run"):
@@ -106,3 +107,47 @@ def run_1c(args: list[str], ctx: RunContext) -> subprocess.CompletedProcess[str]
         )
 
     return result
+
+
+def _verify_display(display: str) -> bool:
+    """Проверяет X-сервер через xdpyinfo; отсутствие утилиты не блокирует запуск."""
+    xdpyinfo = shutil.which("xdpyinfo")
+    if not xdpyinfo:
+        logger.warning("xdpyinfo не найден — проверка DISPLAY пропущена")
+        return True
+    try:
+        result = subprocess.run(
+            [xdpyinfo, "-display", display], capture_output=True, timeout=5, check=False,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+
+
+def _detect_codex_sandbox() -> bool:
+    """Определяет возможную песочницу по владельцу /tmp/.X11-unix."""
+    x11_dir = Path("/tmp/.X11-unix")
+    try:
+        return x11_dir.exists() and x11_dir.stat().st_uid != 0
+    except OSError:
+        return False
+
+
+def run_1c_popen(args: list[str], ctx: RunContext) -> subprocess.Popen | None:
+    """Запускает 1С без ожидания; при dry-run возвращает None."""
+    command = build_command(args, ctx)
+    logger.info("Команда 1С (Popen): %s", _mask_passwords(command))
+    if ctx.dry_run:
+        logger.info("Dry-run: запуск 1С пропущен")
+        return None
+    try:
+        process = subprocess.Popen(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except OSError as error:
+        raise OneCFailed(
+            f"Не удалось запустить 1С: {error}",
+            returncode=-1, command=command, stderr=str(error),
+        ) from error
+    logger.info("1С запущена в фоне, PID: %s", process.pid)
+    return process

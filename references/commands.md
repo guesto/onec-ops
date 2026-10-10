@@ -230,3 +230,87 @@ onec-ops --dry-run load-cf --ib ./base1c --from ./files/base.cf
 
 Формат `.cfu` означает обновление конфигурации и не поддерживается этими командами
 как отдельная операция обновления (планируется v0.2.4).
+
+## open-designer
+
+Открывает интерактивный Конфигуратор.
+
+### Синтаксис
+
+```sh
+onec-ops open-designer --ib PATH [--user NAME] [--password PWD] [--no-wait]
+```
+
+### Параметры
+
+```text
+--ib PATH               Файловая ИБ с 1Cv8.1CD (обязательный)
+--user NAME             Пользователь ИБ
+--password PWD          Пароль пользователя ИБ
+--no-wait               Вернуть управление сразу после запуска процесса
+```
+
+### Поведение
+
+1. Проверяет существующую файловую ИБ.
+2. В Linux требует реальный DISPLAY: отсутствие или неработающий X-сервер — ошибка.
+3. Проверяет X-сервер через `xdpyinfo -display`; без xdpyinfo предупреждает и продолжает.
+4. При признаке sandbox (владелец `/tmp/.X11-unix` не root) возвращает понятную ошибку.
+5. По умолчанию ждёт закрытия окна с таймаутом 600 с, изменяемым через `--timeout`.
+6. `--no-wait` использует Popen: PID в журнале, stdout/stderr в DEVNULL.
+7. Dry-run сохраняет проверку ИБ, пропускает проверки GUI и не запускает процессы.
+8. В Windows запускается напрямую, без проверки DISPLAY и Linux sandbox.
+
+Передаёт `DESIGNER /F <ib>` и необязательные `/N`, `/P`. Пароль маскируется в журнале команды.
+
+### Примеры
+
+```sh
+onec-ops open-designer --ib ./base1c
+onec-ops open-designer --ib ./base1c --no-wait
+onec-ops --ib ./base1c --dry-run open-designer
+```
+
+
+## open-enterprise
+
+Открывает интерактивный клиент 1С:Предприятие.
+
+### Синтаксис
+
+```sh
+onec-ops open-enterprise --ib PATH [--user NAME] [--password PWD] [--execute PATH] [--c PARAM] [--no-wait]
+```
+
+### Параметры
+
+```text
+--ib PATH               Файловая ИБ с 1Cv8.1CD (обязательный)
+--user NAME             Пользователь ИБ
+--password PWD          Пароль пользователя ИБ
+--execute PATH          Обработка для запуска через /Execute (абсолютный путь)
+--c PARAM               Параметр запуска /C
+--no-wait               Вернуть управление сразу после запуска процесса
+```
+
+### Поведение
+
+1. Проверяет существующую файловую ИБ.
+2. В Linux требует реальный DISPLAY: отсутствие или неработающий X-сервер — ошибка.
+3. Проверяет X-сервер через `xdpyinfo -display`; без xdpyinfo предупреждает и продолжает.
+4. При признаке sandbox (владелец `/tmp/.X11-unix` не root) возвращает понятную ошибку.
+5. По умолчанию ждёт закрытия окна с таймаутом 600 с, изменяемым через `--timeout`.
+6. `--no-wait` использует Popen: PID в журнале, stdout/stderr в DEVNULL.
+7. Dry-run сохраняет проверку ИБ, пропускает проверки GUI и не запускает процессы.
+8. В Windows запускается напрямую, без проверки DISPLAY и Linux sandbox.
+
+Передаёт `ENTERPRISE /F <ib>` и необязательные `/N`, `/P`. Для обработки добавляет `/Execute <абсолютный путь>`, для параметра — `/C`. Пароль маскируется в журнале команды.
+
+### Примеры
+
+```sh
+onec-ops open-enterprise --ib ./base1c
+onec-ops open-enterprise --ib ./base1c --no-wait
+onec-ops open-enterprise --ib ./base1c --execute ./task.epf --c "параметр"
+onec-ops --ib ./base1c --dry-run open-enterprise
+```

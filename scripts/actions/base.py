@@ -18,6 +18,8 @@ class Action(ABC):
     help: str
     description: str = ""
     requires_ib: bool = False
+    requires_gui: bool = False
+    """Требуется ли реальный DISPLAY (не Xvfb)."""
     path_args: tuple[str, ...] = ()
 
     @abstractmethod
