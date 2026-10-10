@@ -6,13 +6,14 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.2.2**.
+**Текущая версия: v0.2.3** (в разработке).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
 - `create-ib --type file` — создание файловой ИБ.
 - `dump-config` / `load-config` — выгрузка и загрузка конфигурации в XML.
 - `dump-cf` / `load-cf` — конфигурация `.cf` и расширения `.cfe` с `--extension`.
+- `open-designer` / `open-enterprise` — открыть Конфигуратор или клиент 1С.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -118,6 +119,30 @@ Dry-run требует существующей ИБ и корректного �
 Dry-run сохраняет проверки входного файла и ИБ. Для выгрузки он подготавливает
 родительский каталог, но файл не создаёт. Подробности — в
 [справочнике команд](references/commands.md).
+
+### Открыть Конфигуратор или клиент 1С
+
+    onec-ops open-designer --ib /path/to/ib
+    onec-ops open-enterprise --ib /path/to/ib --user Администратор
+    onec-ops open-enterprise --ib /path/to/ib --execute /path/to/task.epf --c "параметр"
+    onec-ops open-designer --ib /path/to/ib --no-wait
+
+В Linux GUI-команды требуют реальный работающий DISPLAY и недоступны в
+headless-окружениях (CI, Docker, sandbox Codex). X-сервер проверяется через
+`xdpyinfo`; если утилита отсутствует, выводится WARNING. При признаке sandbox
+команда завершается с подсказкой выполнить её в терминале пользователя.
+В Windows запуск выполняется напрямую в графической сессии, DISPLAY не нужен.
+
+По умолчанию команда ждёт закрытия окна, с таймаутом 600 секунд (`--timeout`).
+Флаг `--no-wait` запускает процесс через Popen и возвращает управление сразу;
+stdout/stderr направляются в DEVNULL, в журнал записывается PID.
+Обе команды принимают `--user` и `--password`; пароль маскируется в журнале команды.
+
+    onec-ops --ib /path/to/ib --dry-run open-designer
+    onec-ops --ib /path/to/ib --dry-run open-enterprise --execute ./task.epf --no-wait
+
+Dry-run проверяет существующую ИБ, показывает команду с абсолютными путями,
+пропускает проверки DISPLAY и sandbox и не запускает GUI.
 
 ### Общие параметры
 

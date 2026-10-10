@@ -7,6 +7,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- Команда `open-designer` — открыть Конфигуратор 1С.
+- Команда `open-enterprise` — открыть клиент 1С.
+- Опции: `--user`, `--password`, `--no-wait`.
+- Для `open-enterprise`: `--execute`, `--c`.
+- Проверки DISPLAY через xdpyinfo и признака sandbox Codex; запуск через Popen.
+
 ## [0.2.2] — 2026-10-06
 
 ### Changed

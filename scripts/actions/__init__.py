@@ -8,6 +8,8 @@ from .dump_cf import DumpCfAction
 from .dump_config import DumpConfigAction
 from .load_cf import LoadCfAction
 from .load_config import LoadConfigAction
+from .open_designer import OpenDesignerAction
+from .open_enterprise import OpenEnterpriseAction
 
 
 def get_actions() -> list[Action]:
@@ -18,4 +20,6 @@ def get_actions() -> list[Action]:
         LoadConfigAction(),
         DumpCfAction(),
         LoadCfAction(),
+        OpenDesignerAction(),
+        OpenEnterpriseAction(),
     ]

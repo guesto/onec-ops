@@ -60,20 +60,25 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         config = load_config(ns.config)
+        action = next(item for item in get_actions() if item.name == ns.action)
         ctx = RunContext(
             platform_path=resolve_platform(ns.platform, config),
             log_file=ns.log_file,
             log_level=ns.log_level,
             dry_run=ns.dry_run,
             timeout=ns.timeout,
+            requires_gui=action.requires_gui,
         )
-        check_environment(ctx)
-        action = next(item for item in get_actions() if item.name == ns.action)
+        if not action.requires_gui:
+            check_environment(ctx)
         action.resolve_paths(ns)
         action.validate(ns)
+        if action.requires_gui and not ctx.dry_run:
+            check_environment(ctx)
         action.pre_run(ns, ctx)
-        result = run_1c(action.build_1c_args(ns, ctx), ctx)
-        action.post_run(ns, ctx, result)
+        if not action.requires_gui:
+            result = run_1c(action.build_1c_args(ns, ctx), ctx)
+            action.post_run(ns, ctx, result)
         return 0
     except OneCOpsError as error:
         logger.error("%s", error)
