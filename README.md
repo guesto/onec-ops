@@ -11,7 +11,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.2.3** (в разработке).
+**Текущая версия: v0.3.0** (в разработке).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -19,6 +19,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `dump-config` / `load-config` — выгрузка и загрузка конфигурации в XML.
 - `dump-cf` / `load-cf` — конфигурация `.cf` и расширения `.cfe` с `--extension`.
 - `open-designer` / `open-enterprise` — открыть Конфигуратор или клиент 1С.
+- `dump-epf` / `load-epf` — разборка и сборка внешних обработок `.epf` и отчётов `.erf` в XML.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -148,6 +149,29 @@ stdout/stderr направляются в DEVNULL, в журнал записы�
 
 Dry-run проверяет существующую ИБ, показывает команду с абсолютными путями,
 пропускает проверки DISPLAY и sandbox и не запускает GUI.
+
+### Внешние обработки и отчёты (.epf / .erf)
+
+    onec-ops dump-epf --ib /path/to/ib --epf /path/to/file.epf --to /path/to/xml
+    onec-ops load-epf --ib /path/to/ib --root /path/to/xml/file.xml --epf /path/to/file.epf
+
+Для отчётов используйте те же команды с файлом `.erf`:
+
+    onec-ops dump-epf --ib /path/to/ib --epf /path/to/report.erf --to /path/to/report-xml
+    onec-ops load-epf --ib /path/to/ib --root /path/to/report-xml/report.xml --epf /path/to/report.erf
+
+`dump-epf` требует существующий непустой файл `.epf` или `.erf` (регистр
+суффикса не важен). Каталог XML создаётся автоматически; при непустом
+каталоге выводится WARNING о возможной перезаписи.
+`load-epf` принимает корневой непустой `.xml` и создаёт родительские каталоги
+для выходного файла. Каталоги назначения проверяются на доступность записи.
+Обе команды требуют существующую файловую ИБ с `1Cv8.1CD` и поддерживают dry-run:
+
+    onec-ops --ib /path/to/ib --dry-run dump-epf --epf /path/to/file.epf --to /tmp/epf-dump
+    onec-ops --ib /path/to/ib --dry-run load-epf --root /path/to/file.xml --epf /tmp/test.epf
+
+Dry-run выполняет валидацию и подготавливает каталоги, но не создаёт XML или
+файл обработки. Для `load-epf` нужен уже существующий корневой XML-файл.
 
 ### Общие параметры
 

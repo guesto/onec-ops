@@ -25,10 +25,7 @@ Thumbs.db
 logs/
 
 # Тестовые данные 1С (могут быть конфиденциальными)
-inputs/base1c/
-inputs/base2c/
-inputs/etc1c/
-inputs/storage1c/
+inputs/*
 !inputs/.gitkeep
 
 # Выходные артефакты
