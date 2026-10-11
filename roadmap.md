@@ -150,7 +150,7 @@ API `--extension`:
 
 - `dump-epf` — разборка `.epf` / `.erf` в XML.
   - `--epf <файл.epf|erf> --to <каталог>`
-  - `/DumpExternalDataProcessorOfReportToFiles`
+  - `/DumpExternalDataProcessorOrReportToFiles`
 - `load-epf` — сборка `.epf` / `.erf` из XML.
   - `--root <файл.xml> --epf <файл.epf|erf>`
   - `/LoadExternalDataProcessorOrReportFromFiles`
