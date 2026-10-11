@@ -1,5 +1,10 @@
 # onec-ops
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/guesto/onec-ops/actions/workflows/test.yml/badge.svg)](https://github.com/guesto/onec-ops/actions/workflows/test.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Release](https://img.shields.io/github/v/release/guesto/onec-ops?include_prereleases&label=release)](https://github.com/guesto/onec-ops/releases)
+
 CLI-утилита и Agent Skill для автоматизации пакетных операций 
 1С:Предприятие. Работает как для человека в терминале, так и для 
 ИИ-агентов (Codex, Claude Code).
