@@ -47,3 +47,4 @@ outputs/*
 
 # Локальные настройки Codex
 .codex/
+inputs/epf1c/
