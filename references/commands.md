@@ -488,3 +488,128 @@ onec-ops --ib ./base1c --dry-run restore-dt --from ./backups/base.dt --force --y
 
 При успешном реальном запуске 1С восстанавливает целевую базу из бэкапа.
 Dry-run `dump-dt` файл бэкапа не создаёт: для `restore-dt` подготовьте `.dt` заранее.
+
+## repo-create
+
+Создаёт файловое хранилище конфигурации на основе существующей файловой ИБ.
+
+### Синтаксис
+
+```sh
+onec-ops repo-create --ib PATH --storage PATH [--user NAME] [--password PWD]
+```
+
+### Параметры
+
+```text
+--ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
+--storage PATH          Каталог файлового хранилища (обязательный)
+--user NAME             Администратор хранилища (по умолчанию «Администратор»)
+--password PWD          Пароль администратора (опционально)
+```
+
+### Поведение
+
+1. Проверяет ИБ и доступность родительского каталога хранилища для записи.
+   Если родители ещё не созданы, проверяет ближайший существующий каталог.
+2. Предупреждает (WARNING), если каталог хранилища уже существует и непустой.
+   Файл вместо каталога — ошибка.
+3. Создаёт недостающие каталоги, включая сам каталог хранилища.
+4. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryCreate <storage>`
+   и непустые учётные данные через `/ConfigurationRepositoryN` и `/ConfigurationRepositoryP`.
+5. Пути становятся абсолютными; пароль маскируется в журнале команды.
+6. Dry-run выполняет проверки и создаёт каталог, но само хранилище не создаёт.
+
+### Примеры
+
+```sh
+onec-ops repo-create --ib ./base1c --storage ./storage1c
+onec-ops repo-create --ib ./base1c --storage ./storage1c --user admin --password secret
+onec-ops --ib ./base1c --dry-run repo-create --storage ./storage1c
+```
+
+Поддерживается только файловое хранилище, без `crserver`, `tcp://` и `http://`.
+
+## repo-bind
+
+Подключает существующую файловую ИБ к файловому хранилищу конфигурации.
+
+### Синтаксис
+
+```sh
+onec-ops repo-bind --ib PATH --storage PATH
+                   [--storage-user NAME] [--storage-password PWD] [--force]
+```
+
+### Параметры
+
+```text
+--ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
+--storage PATH          Существующий непустой каталог хранилища (обязательный)
+--storage-user NAME     Пользователь хранилища (опционально)
+--storage-password PWD  Пароль пользователя хранилища (опционально)
+--force                 Перезаписать конфигурацию базы (-forceReplaceCfg)
+```
+
+### Поведение
+
+1. Проверяет ИБ и существующий непустой каталог хранилища.
+2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryBindCfg`
+   и `/ConfigurationRepositoryF <storage>`.
+3. Непустые учётные данные передаёт через `/ConfigurationRepositoryN` и
+   `/ConfigurationRepositoryP`; `--force` добавляет `-forceReplaceCfg`.
+4. Пути становятся абсолютными; пароль маскируется в журнале команды.
+5. Dry-run сохраняет проверки и показывает команду без запуска 1С.
+
+### Примеры
+
+```sh
+onec-ops repo-bind --ib ./other-base1c --storage ./storage1c --storage-user admin
+onec-ops repo-bind --ib ./other-base1c --storage ./storage1c --storage-user admin --storage-password secret --force
+onec-ops --ib ./other-base1c --dry-run repo-bind --storage ./storage1c --storage-user admin
+```
+
+Dry-run `repo-create` создаёт только каталог: для подключения нужно
+хранилище, предварительно созданное реальным запуском 1С.
+
+## repo-update
+
+Обновляет конфигурацию существующей файловой ИБ из файлового хранилища.
+
+### Синтаксис
+
+```sh
+onec-ops repo-update --ib PATH --storage PATH
+                     [--storage-user NAME] [--storage-password PWD]
+                     [--version N] [--force]
+```
+
+### Параметры
+
+```text
+--ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
+--storage PATH          Существующий каталог хранилища (обязательный)
+--storage-user NAME     Пользователь хранилища (опционально)
+--storage-password PWD  Пароль пользователя хранилища (опционально)
+--version N             Целочисленный номер версии (по умолчанию последняя)
+--force                 Получить новые объекты (-force)
+```
+
+### Поведение
+
+1. Проверяет ИБ и существование каталога хранилища.
+2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryUpdateCfg`
+   и `/ConfigurationRepositoryF <storage>`.
+3. Непустые учётные данные передаёт через `/ConfigurationRepositoryN` и
+   `/ConfigurationRepositoryP`; ненулевой `--version N` добавляет `-v N`,
+   `--force` добавляет `-force`.
+4. Пути становятся абсолютными; пароль маскируется в журнале команды.
+5. Dry-run выполняет проверки и показывает команду без запуска 1С.
+
+### Примеры
+
+```sh
+onec-ops repo-update --ib ./base1c --storage ./storage1c --storage-user admin
+onec-ops repo-update --ib ./base1c --storage ./storage1c --version 5 --force
+onec-ops --ib ./base1c --dry-run repo-update --storage ./storage1c
+```
