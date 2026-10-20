@@ -11,7 +11,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.4.0** (в разработке).
+**Текущая версия: v0.5.0** (в разработке).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -21,6 +21,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `open-designer` / `open-enterprise` — открыть Конфигуратор или клиент 1С.
 - `dump-epf` / `load-epf` — разборка и сборка внешних обработок `.epf` и отчётов `.erf` в XML.
 - `dump-dt` / `restore-dt` — резервное копирование и восстановление базы через `.dt`.
+- `repo-create` / `repo-bind` / `repo-update` — файловое хранилище конфигурации.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -199,6 +200,35 @@ Dry-run выполняет валидацию и подготавливает к
 Dry-run проверяет ИБ и пути, для выгрузки создаёт родительские каталоги,
 но не создаёт `.dt` и не запускает 1С. Для dry-run восстановления нужен
 уже существующий непустой `.dt`; подтверждение действует так же, как при запуске.
+
+### Файловое хранилище конфигурации
+
+    onec-ops repo-create --ib /path/to/ib --storage /path/to/storage
+    onec-ops repo-bind --ib /path/to/other-ib --storage /path/to/storage --storage-user Администратор
+    onec-ops repo-update --ib /path/to/other-ib --storage /path/to/storage --storage-user Администратор
+
+Все три команды требуют существующую файловую ИБ с `1Cv8.1CD`.
+`repo-create` создаёт каталог хранилища вместе с недостающими родительскими
+каталогами и предупреждает, если он уже непустой. Администратор по умолчанию —
+«Администратор»; для других учётных данных задайте `--user NAME --password PWD`.
+
+`repo-bind` требует существующий непустой каталог хранилища. Флаг `--force`
+передаёт `-forceReplaceCfg` и разрешает перезапись конфигурации базы.
+`repo-update` требует существующий каталог и по умолчанию получает последнюю
+версию; `--version N` выбирает версию, `--force` получает новые объекты.
+Для обеих команд учётные данные задаются опциональными `--storage-user NAME`
+и `--storage-password PWD`. Пароль маскируется в журнале команды.
+
+    onec-ops repo-update --ib /path/to/other-ib --storage /path/to/storage --version 5 --force
+    onec-ops --ib inputs/base1c --dry-run repo-create --storage inputs/storage1c
+    onec-ops --ib inputs/base1c --dry-run repo-bind --storage inputs/storage1c --storage-user admin
+    onec-ops --ib inputs/base1c --dry-run repo-update --storage inputs/storage1c
+
+Dry-run проверяет ИБ и пути, показывает команду с абсолютными путями, но
+не запускает 1С. Для `repo-create` он создаёт только каталог: для последующего
+`repo-bind` нужно уже существующее непустое хранилище.
+Поддерживается только файловое хранилище, без `crserver` и удалённых адресов.
+Подробнее: [справочник команд](references/commands.md#repo-create).
 
 ### Общие параметры
 
