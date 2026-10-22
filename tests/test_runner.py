@@ -93,6 +93,21 @@ def test_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
     assert "***" in caplog.text
 
 
+def test_repo_user_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
+    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, "", ""))
+
+    with caplog.at_level("INFO"):
+        run_1c(
+            ["DESIGNER", "/ConfigurationRepositoryAddUser", "-User", "dev", "-Pwd", "user-secret"],
+            RunContext(_platform(tmp_path)),
+        )
+
+    assert "user-secret" not in caplog.text
+    assert "-User', 'dev'" in caplog.text
+    assert "***" in caplog.text
+
+
 def test_popen_when_no_wait(tmp_path, monkeypatch, mocker):
     monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
     platform = _platform(tmp_path)

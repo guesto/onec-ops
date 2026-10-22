@@ -15,7 +15,7 @@ from pathlib import Path
 from .exceptions import OneCFailed, PlatformNotFound, XvfbNotAvailable
 
 logger = logging.getLogger(__name__)
-_PASSWORD_OPTIONS = {"/p", "/configurationrepositoryp"}
+_PASSWORD_OPTIONS = {"/p", "/configurationrepositoryp", "-pwd"}
 _OUT_MODES = {"DESIGNER", "CREATEINFOBASE"}
 
 
