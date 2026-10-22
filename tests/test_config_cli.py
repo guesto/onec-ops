@@ -127,5 +127,6 @@ def test_cli_uses_runner_with_absolute_paths(
         assert command[command.index(flag) + 1] == str(xml)
         assert platform_calls[0].kwargs["timeout"] == 600
         if action_name == "load-config":
-            assert command[-1] == "/UpdateDBCfg"
+            assert command[-3] == "/UpdateDBCfg"
+        assert command[-2] == "/Out"
     assert xml.is_dir()

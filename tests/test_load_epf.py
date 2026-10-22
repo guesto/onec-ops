@@ -157,5 +157,7 @@ def test_cli_runs_with_mocked_subprocess(ns, ctx, subprocess_mock, mocker, caplo
     else:
         subprocess_mock.assert_called_once()
         expected = LoadEpfAction().build_1c_args(ns, ctx)
-        assert subprocess_mock.call_args.args[0][-len(expected) :] == expected
+        command = subprocess_mock.call_args.args[0]
+        assert command[-len(expected) - 2 : -2] == expected
+        assert command[-2] == "/Out"
         assert subprocess_mock.call_args.kwargs["timeout"] == 600
