@@ -11,6 +11,11 @@ from scripts.lib.exceptions import OneCOpsError
 from scripts.onec_ops import build_parser, main
 
 REPO_ACTIONS = [action for action in get_actions() if action.name.startswith("repo-")]
+ADD_USER_ARGS = ["--user", "dev", "--rights", "LockObjects"]
+
+
+def _required_args(action):
+    return ADD_USER_ARGS if action.name == "repo-add-user" else []
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +34,9 @@ def test_storage_argument_required(action, capsys):
 @pytest.mark.parametrize("action", REPO_ACTIONS, ids=lambda action: action.name)
 @pytest.mark.parametrize("ib_state", ["missing_argument", "missing_file"])
 def test_validate_requires_file_ib(action, ib_state, tmp_path):
-    ns = build_parser().parse_args([action.name, "--storage", str(tmp_path)])
+    ns = build_parser().parse_args(
+        [action.name, "--storage", str(tmp_path), *_required_args(action)]
+    )
     if ib_state == "missing_file":
         ns.ib = tmp_path
     with pytest.raises(OneCOpsError, match="--ib|1Cv8.1CD"):
@@ -61,6 +68,12 @@ def test_cli_uses_runner_with_absolute_paths(
             "/ConfigurationRepositoryF", str(storage),
             "/ConfigurationRepositoryCreate",
         ]
+    elif action.name == "repo-add-user":
+        args += [
+            *ADD_USER_ARGS, "--password", "user-secret",
+            "--storage-user", "admin", "--storage-password", "secret",
+        ]
+        expected = ["/ConfigurationRepositoryF", str(storage)]
     else:
         args += ["--storage-user", "admin", "--storage-password", "secret", "--force"]
         flag = (
@@ -74,6 +87,11 @@ def test_cli_uses_runner_with_absolute_paths(
     elif action.name == "repo-update":
         args += ["--version", "42"]
         expected += ["-v", "42", "-force"]
+    elif action.name == "repo-add-user":
+        expected += [
+            "/ConfigurationRepositoryAddUser", "-User", "dev",
+            "-Pwd", "user-secret", "-Rights", "LockObjects",
+        ]
     expected = ["DESIGNER", "/F", str(ib), "/DisableStartupDialogs", *expected]
     if dry_run:
         args += ["--dry-run"]
