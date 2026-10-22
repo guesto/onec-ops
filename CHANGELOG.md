@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-10-22
+
 ### Added
 
 - Команда `repo-add-user` — добавление пользователя в хранилище конфигурации.
@@ -102,7 +104,8 @@
   Решение: `sandbox_mode = "danger-full-access"` в `~/.codex/config.toml`.
 - `create-ib --type server` — заглушка (v0.1.1 отложен).
 
-[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/guesto/onec-ops/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/guesto/onec-ops/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/guesto/onec-ops/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/guesto/onec-ops/compare/v0.2.3...v0.3.0
