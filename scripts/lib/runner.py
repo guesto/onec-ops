@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +16,7 @@ from .exceptions import OneCFailed, PlatformNotFound, XvfbNotAvailable
 
 logger = logging.getLogger(__name__)
 _PASSWORD_OPTIONS = {"/p", "/configurationrepositoryp"}
+_OUT_MODES = {"DESIGNER", "CREATEINFOBASE"}
 
 
 @dataclass
@@ -61,8 +63,58 @@ def _mask_passwords(command: list[str]) -> list[str]:
     return masked
 
 
+def _find_out_file(args: list[str]) -> Path | None:
+    """Возвращает файл из ключа /Out, если он уже передан."""
+    for index, value in enumerate(args[:-1]):
+        if value.lower() == "/out":
+            return Path(args[index + 1])
+    return None
+
+
+def _read_out_file(out_file: Path | None) -> str:
+    """Читает файл /Out (1С пишет UTF-8 с BOM); отсутствие файла не ошибка."""
+    if out_file is None:
+        return ""
+    try:
+        return out_file.read_text(encoding="utf-8-sig", errors="replace").strip()
+    except OSError:
+        return ""
+
+
+def _with_out_text(message: str, out_text: str) -> str:
+    """Добавляет сообщения 1С к тексту ошибки."""
+    return f"{message}\n{out_text}" if out_text else message
+
+
 def run_1c(args: list[str], ctx: RunContext) -> subprocess.CompletedProcess[str]:
-    """Запускает 1С и преобразует ошибки процесса в OneCFailed."""
+    """Запускает 1С и преобразует ошибки процесса в OneCFailed.
+
+    Для пакетных DESIGNER/CREATEINFOBASE добавляет /Out во временный файл:
+    иначе текст ошибки 1С недоступен (stdout и stderr пустые).
+    """
+    out_file = _find_out_file(args)
+    temp_out_file: Path | None = None
+    if (
+        out_file is None
+        and not ctx.dry_run
+        and not ctx.requires_gui
+        and args
+        and args[0].upper() in _OUT_MODES
+    ):
+        fd, name = tempfile.mkstemp(prefix="onec-ops-out-", suffix=".txt")
+        os.close(fd)
+        temp_out_file = out_file = Path(name)
+        args = [*args, "/Out", name]
+    try:
+        return _run_1c(args, ctx, out_file)
+    finally:
+        if temp_out_file is not None:
+            temp_out_file.unlink(missing_ok=True)
+
+
+def _run_1c(
+    args: list[str], ctx: RunContext, out_file: Path | None,
+) -> subprocess.CompletedProcess[str]:
     command = build_command(args, ctx)
     logged_command = _mask_passwords(command)
     logger.info("Команда 1С: %s", logged_command)
@@ -85,9 +137,13 @@ def run_1c(args: list[str], ctx: RunContext) -> subprocess.CompletedProcess[str]
     except subprocess.TimeoutExpired as error:
         duration = time.monotonic() - started_at
         logger.error("1С превысила таймаут за %.2f с: %s", duration, logged_command)
+        out_text = _read_out_file(out_file)
         raise OneCFailed(
-            f"1С не завершилась за {ctx.timeout} секунд. Возможные причины: "
-            "открыт диалог, отсутствует база, проблемы с лицензией.",
+            _with_out_text(
+                f"1С не завершилась за {ctx.timeout} секунд. Возможные причины: "
+                "открыт диалог, отсутствует база, проблемы с лицензией.",
+                out_text,
+            ),
             returncode=-1,
             command=command,
             stderr=str(error),
@@ -96,11 +152,14 @@ def run_1c(args: list[str], ctx: RunContext) -> subprocess.CompletedProcess[str]
     duration = time.monotonic() - started_at
     logger.info("stdout 1С: %s", result.stdout)
     logger.info("stderr 1С: %s", result.stderr)
+    out_text = _read_out_file(out_file)
+    if out_text:
+        logger.info("Сообщения 1С (/Out): %s", out_text)
     logger.info("1С завершилась с кодом %s за %.2f с", result.returncode, duration)
 
     if result.returncode != 0:
         raise OneCFailed(
-            f"1С завершилась с ненулевым кодом: {result.returncode}",
+            _with_out_text(f"1С завершилась с ненулевым кодом: {result.returncode}", out_text),
             returncode=result.returncode,
             command=command,
             stderr=result.stderr,
