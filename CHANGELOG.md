@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-10-22
+
 ### Added
 
 - Сообщения 1С из `/Out` в журнале и в тексте ошибки CLI: пакетные `DESIGNER`/`CREATEINFOBASE`
@@ -109,7 +111,8 @@
   Решение: `sandbox_mode = "danger-full-access"` в `~/.codex/config.toml`.
 - `create-ib --type server` — заглушка (v0.1.1 отложен).
 
-[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/guesto/onec-ops/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/guesto/onec-ops/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/guesto/onec-ops/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/guesto/onec-ops/compare/v0.3.0...v0.4.0
