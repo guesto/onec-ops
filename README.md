@@ -11,7 +11,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.5.0** (в разработке).
+**Текущая версия: v0.5.0** (2026-10-20). В работе: v0.5.1 — `repo-add-user`.
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -21,7 +21,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `open-designer` / `open-enterprise` — открыть Конфигуратор или клиент 1С.
 - `dump-epf` / `load-epf` — разборка и сборка внешних обработок `.epf` и отчётов `.erf` в XML.
 - `dump-dt` / `restore-dt` — резервное копирование и восстановление базы через `.dt`.
-- `repo-create` / `repo-bind` / `repo-update` — файловое хранилище конфигурации.
+- `repo-create` / `repo-bind` / `repo-update` / `repo-add-user` — файловое хранилище конфигурации.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -206,8 +206,9 @@ Dry-run проверяет ИБ и пути, для выгрузки созда�
     onec-ops repo-create --ib /path/to/ib --storage /path/to/storage
     onec-ops repo-bind --ib /path/to/other-ib --storage /path/to/storage --storage-user Администратор
     onec-ops repo-update --ib /path/to/other-ib --storage /path/to/storage --storage-user Администратор
+    onec-ops repo-add-user --ib /path/to/ib --storage /path/to/storage --storage-user Администратор --user Разработчик2 --rights LockObjects
 
-Все три команды требуют существующую файловую ИБ с `1Cv8.1CD`.
+Все команды хранилища требуют существующую файловую ИБ с `1Cv8.1CD`.
 `repo-create` создаёт каталог хранилища вместе с недостающими родительскими
 каталогами и предупреждает, если он уже непустой. Администратор по умолчанию —
 «Администратор»; для других учётных данных задайте `--user NAME --password PWD`.
@@ -218,6 +219,14 @@ Dry-run проверяет ИБ и пути, для выгрузки созда�
 версию; `--version N` выбирает версию, `--force` получает новые объекты.
 Для обеих команд учётные данные задаются опциональными `--storage-user NAME`
 и `--storage-password PWD`. Пароль маскируется в журнале команды.
+
+`repo-add-user` добавляет пользователя от имени администратора хранилища
+(`--storage-user` / `--storage-password`). `--rights` обязателен: `ReadOnly`,
+`LockObjects`, `ManageConfigurationVersions` или `Administration`;
+`--password` задаёт пароль нового пользователя, `--restore-deleted`
+восстанавливает удалённого. Одного пользователя можно подключить только
+к одной базе, поэтому для каждой следующей базы заведите своего пользователя.
+`--ib` должна быть подключена к этому хранилищу или не подключена ни к какому.
 
     onec-ops repo-update --ib /path/to/other-ib --storage /path/to/storage --version 5 --force
     onec-ops --ib inputs/base1c --dry-run repo-create --storage inputs/storage1c

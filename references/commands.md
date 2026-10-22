@@ -613,3 +613,60 @@ onec-ops repo-update --ib ./base1c --storage ./storage1c --storage-user admin
 onec-ops repo-update --ib ./base1c --storage ./storage1c --version 5 --force
 onec-ops --ib ./base1c --dry-run repo-update --storage ./storage1c
 ```
+
+## repo-add-user
+
+Добавляет пользователя в файловое хранилище конфигурации от имени
+администратора хранилища.
+
+### Синтаксис
+
+```sh
+onec-ops repo-add-user --ib PATH --storage PATH --user NAME --rights RIGHTS
+                       [--password PWD] [--storage-user NAME]
+                       [--storage-password PWD] [--restore-deleted]
+```
+
+### Параметры
+
+```text
+--ib PATH               Файловая ИБ с 1Cv8.1CD: подключённая к этому хранилищу
+                        или не подключённая ни к какому (обязательный)
+--storage PATH          Существующий каталог хранилища (обязательный)
+--user NAME             Имя нового пользователя (обязательный)
+--password PWD          Пароль нового пользователя (опционально)
+--rights RIGHTS         ReadOnly | LockObjects | ManageConfigurationVersions |
+                        Administration (обязательный)
+--storage-user NAME     Администратор хранилища (опционально)
+--storage-password PWD  Пароль администратора хранилища (опционально)
+--restore-deleted       Восстановить ранее удалённого пользователя (-RestoreDeletedUser)
+```
+
+### Поведение
+
+1. Проверяет ИБ, существование каталога хранилища и непустое имя `--user`;
+   значение `--rights` проверяет argparse.
+2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryF <storage>`,
+   учётные данные администратора через `/ConfigurationRepositoryN` и
+   `/ConfigurationRepositoryP`, затем
+   `/ConfigurationRepositoryAddUser -User <имя> [-Pwd <пароль>] -Rights <права>`.
+3. Без `--password` ключ `-Pwd` не передаётся: пользователь создаётся без пароля.
+4. Пути становятся абсолютными; оба пароля (`/ConfigurationRepositoryP`, `-Pwd`)
+   маскируются в журнале команды.
+5. Dry-run выполняет проверки и показывает команду без запуска 1С.
+
+Если `--ib` подключена к другому хранилищу, 1С завершается с кодом 1
+(«Конфигурация связана с другим хранилищем»). Повторное добавление
+существующего пользователя также завершается с кодом 1.
+
+### Примеры
+
+```sh
+onec-ops repo-add-user --ib ./base1c --storage ./storage1c --storage-user Администратор \
+    --user Разработчик2 --password secret --rights LockObjects
+onec-ops repo-bind --ib ./base2c --storage ./storage1c \
+    --storage-user Разработчик2 --storage-password secret
+onec-ops --ib ./base1c --dry-run repo-add-user --storage ./storage1c --user Тестер --rights ReadOnly
+```
+
+Так к одному хранилищу подключаются несколько баз: у каждой свой пользователь.

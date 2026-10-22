@@ -9,16 +9,41 @@
 
 ### Added
 
+- Команда `repo-add-user` — добавление пользователя в хранилище конфигурации.
+- Опции: `--rights`, `--password`, `--restore-deleted`.
+- Маскирование пароля `-Pwd` в журнале команды.
+
+## [0.5.0] — 2026-10-20
+
+### Added
+
 - Команда `repo-create` — создание хранилища конфигурации.
 - Команда `repo-bind` — подключение базы к хранилищу.
 - Команда `repo-update` — обновление из хранилища.
+
+### Known Limitations
+
+- Только файловое хранилище (без `crserver`, tcp://, http://).
+- Один пользователь хранилища = одна база (`repo-add-user` — v0.5.1).
+
+## [0.4.0] — 2026-10-19
+
+### Added
 
 - Команда `dump-dt` — выгрузка базы в .dt.
 - Команда `restore-dt` — восстановление базы из .dt.
 - Опции: --force, --yes для безопасного восстановления.
 
+## [0.3.0] — 2026-10-11
+
+### Added
+
 - Команда `dump-epf` — разборка внешней обработки/отчёта .epf/.erf в XML.
 - Команда `load-epf` — сборка внешней обработки/отчёта .epf/.erf из XML.
+
+## [0.2.3] — 2026-10-10
+
+### Added
 
 - Команда `open-designer` — открыть Конфигуратор 1С.
 - Команда `open-enterprise` — открыть клиент 1С.
@@ -38,7 +63,7 @@
 
 - Команды `dump-cfu` и `load-cfu`, их действия и тесты.
 
-## [0.2.1]
+## [0.2.1] — 2026-10-06
 
 ### Added
 
@@ -46,6 +71,10 @@
 - Команда `load-cf` — загрузка конфигурации из .cf.
 - Команда `dump-cfu` — выгрузка расширения в .cfu.
 - Команда `load-cfu` — загрузка расширения из .cfu.
+
+## [0.2.0] — 2026-10-06
+
+### Added
 
 - Команда `dump-config` — выгрузка конфигурации в XML.
 - Команда `load-config` — загрузка конфигурации из XML.
@@ -73,7 +102,12 @@
   Решение: `sandbox_mode = "danger-full-access"` в `~/.codex/config.toml`.
 - `create-ib --type server` — заглушка (v0.1.1 отложен).
 
-[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/guesto/onec-ops/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/guesto/onec-ops/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/guesto/onec-ops/compare/v0.2.3...v0.3.0
+[0.2.3]: https://github.com/guesto/onec-ops/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/guesto/onec-ops/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/guesto/onec-ops/compare/v0.1.0...v0.2.1
+[0.2.1]: https://github.com/guesto/onec-ops/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/guesto/onec-ops/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/guesto/onec-ops/releases/tag/v0.1.0
