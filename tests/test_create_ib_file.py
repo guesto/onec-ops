@@ -29,8 +29,8 @@ def _namespace(
     )
 
 
-def test_server_type_reports_v011_placeholder(tmp_path):
-    with pytest.raises(OneCOpsError, match="v0.1.1"):
+def test_server_type_reports_v031_placeholder(tmp_path):
+    with pytest.raises(OneCOpsError, match="v0.3.1"):
         CreateIbFileAction().validate(_namespace(tmp_path, ib_type="server"))
 
 
@@ -95,3 +95,34 @@ def test_build_args_uses_absolute_path(tmp_path):
     )
 
     assert args == ["CREATEINFOBASE", f"File={relative_path.resolve()}", "/DisableStartupMessages"]
+
+
+def test_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
+    (tmp_path / "1Cv8.1CD").write_text("data")
+    remove_mock = mocker.patch("scripts.actions.create_ib_file.shutil.rmtree")
+    namespace = _namespace(tmp_path, force=True, yes=True)
+
+    CreateIbFileAction().pre_run(namespace, RunContext(tmp_path / "1cv8", dry_run=True))
+
+    remove_mock.assert_not_called()
+    assert (tmp_path / "1Cv8.1CD").read_text() == "data"
+
+
+def test_cli_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
+    from scripts.onec_ops import main
+
+    ib = tmp_path / "ib"
+    ib.mkdir()
+    (ib / "1Cv8.1CD").write_text("data")
+    platform = tmp_path / "1cv8"
+    platform.touch()
+    platform.chmod(0o755)
+    mocker.patch("scripts.onec_ops.check_environment")
+    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    run = mocker.patch("subprocess.run")
+
+    argv = ["--platform", str(platform), "--dry-run", "create-ib", "--type", "file"]
+    assert main([*argv, "--path", str(ib), "--force", "--yes"]) == 0
+
+    run.assert_not_called()
+    assert (ib / "1Cv8.1CD").read_text() == "data"

@@ -41,7 +41,7 @@ class CreateIbFileAction(Action):
         """Проверяет параметры создания ИБ."""
         if ns.ib_type == "server":
             raise OneCOpsError(
-                "Клиент-серверная ИБ будет реализована в v0.1.1. Сейчас используйте --type file."
+                "Клиент-серверная ИБ пока не поддержана (запланирована в v0.3.1). Используйте --type file."
             )
         if ns.path is None:
             raise OneCOpsError("Для --type file обязательно укажите --path.")
@@ -83,6 +83,9 @@ class CreateIbFileAction(Action):
             return
         path = Path(ns.path).resolve()
         if ns.force and (path / "1Cv8.1CD").exists():
+            if ctx.dry_run:
+                logger.info("Dry-run: существующая ИБ не удаляется: %s", path)
+                return
             logger.warning("Удаляю существующую ИБ: %s", path)
             shutil.rmtree(path)
         path.mkdir(parents=True, exist_ok=True)
