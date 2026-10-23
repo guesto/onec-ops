@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -17,6 +18,7 @@ from .exceptions import OneCFailed, PlatformNotFound, XvfbNotAvailable
 logger = logging.getLogger(__name__)
 _PASSWORD_OPTIONS = {"/p", "/configurationrepositoryp", "-pwd"}
 _OUT_MODES = {"DESIGNER", "CREATEINFOBASE"}
+_TERMINATE_GRACE = 5.0
 
 
 @dataclass
@@ -67,6 +69,58 @@ def _mask_passwords(command: list[str]) -> list[str]:
         if value.lower() in _PASSWORD_OPTIONS:
             masked[index + 1] = "***"
     return masked
+
+
+def _kill_process_group(process: subprocess.Popen[str]) -> None:
+    """Завершает процесс 1С вместе с его группой (xvfb-run, Xvfb, 1cv8).
+
+    Сначала SIGTERM, чтобы Xvfb удалил свой lock-файл, затем SIGKILL тем,
+    кто не завершился за _TERMINATE_GRACE секунд.
+    """
+    if sys.platform == "win32":
+        process.kill()
+        return
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    deadline = time.monotonic() + _TERMINATE_GRACE
+    while time.monotonic() < deadline:
+        process.poll()
+        try:
+            os.killpg(process.pid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.1)
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
+def _execute(command: list[str], *, timeout: int) -> subprocess.CompletedProcess[str]:
+    """Запускает 1С в отдельной группе процессов и ждёт завершения.
+
+    subprocess.run при таймауте убивает только прямого потомка: под xvfb-run
+    это обёртка, а 1cv8 и Xvfb остались бы работать и держать ИБ.
+    Поэтому при таймауте и любом прерывании завершается вся группа.
+    """
+    with subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        start_new_session=sys.platform != "win32",
+    ) as process:
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except BaseException:
+            _kill_process_group(process)
+            process.wait()
+            raise
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
 def _find_out_file(args: list[str]) -> Path | None:
@@ -131,15 +185,7 @@ def _run_1c(
 
     started_at = time.monotonic()
     try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-            timeout=ctx.timeout,
-        )
+        result = _execute(command, timeout=ctx.timeout)
     except subprocess.TimeoutExpired as error:
         duration = time.monotonic() - started_at
         logger.error("1С превысила таймаут за %.2f с: %s", duration, logged_command)
@@ -153,6 +199,11 @@ def _run_1c(
             returncode=-1,
             command=command,
             stderr=str(error),
+        ) from error
+    except OSError as error:
+        raise OneCFailed(
+            f"Не удалось запустить 1С: {error}",
+            returncode=-1, command=command, stderr=str(error),
         ) from error
 
     duration = time.monotonic() - started_at

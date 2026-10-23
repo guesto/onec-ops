@@ -90,7 +90,7 @@ def test_validate_errors(argv, message, ib):
 
 def test_cli_changes(cli, mocker, caplog):
     out = "Новый объект: Справочник.Номенклатура\r\nОбновление конфигурации успешно завершено"
-    run = mocker.patch("subprocess.run", side_effect=_fake_run(0, out))
+    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, out))
     with caplog.at_level("INFO"):
         assert cli("update-db") == 0
     assert "/UpdateDBCfg" in run.call_args.args[0]
@@ -99,21 +99,21 @@ def test_cli_changes(cli, mocker, caplog):
 
 
 def test_cli_no_changes(cli, mocker, caplog):
-    mocker.patch("subprocess.run", side_effect=_fake_run(0, ""))
+    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
     with caplog.at_level("INFO"):
         assert cli("update-db") == 0
     assert "Изменений нет" in caplog.text
 
 
 def test_cli_failure_shows_1c_text(cli, mocker, caplog):
-    mocker.patch("subprocess.run", side_effect=_fake_run(1, "Ошибка обновления структуры"))
+    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, "Ошибка обновления структуры"))
     assert cli("update-db", "--warnings-as-errors") == 1
     assert "Ошибка обновления структуры" in caplog.text
     assert "Конфигурация БД обновлена" not in caplog.text
 
 
 def test_cli_dry_run(cli, mocker, caplog):
-    run = mocker.patch("subprocess.run")
+    run = mocker.patch("scripts.lib.runner._execute")
     with caplog.at_level("INFO"):
         assert cli("--dry-run", "update-db", "--dynamic") == 0
     run.assert_not_called()
