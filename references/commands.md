@@ -307,8 +307,7 @@ onec-ops load-cf --ib ./base1c --from ./files/ext.cfe --extension TestExt --upda
 onec-ops --dry-run load-cf --ib ./base1c --from ./files/base.cf
 ```
 
-Формат `.cfu` означает обновление конфигурации и не поддерживается этими командами
-как отдельная операция обновления (планируется v0.2.4).
+Формат `.cfu` (файл обновления конфигурации) не поддерживается.
 
 ## open-designer
 

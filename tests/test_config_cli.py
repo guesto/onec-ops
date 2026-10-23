@@ -15,7 +15,7 @@ from scripts.onec_ops import build_parser, main
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     """Запрещает реальные дочерние процессы во всех CLI-тестах."""
-    return mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    return mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
 
 
 @pytest.mark.parametrize(

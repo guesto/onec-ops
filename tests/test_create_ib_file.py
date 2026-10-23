@@ -119,7 +119,7 @@ def test_cli_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
     platform.chmod(0o755)
     mocker.patch("scripts.onec_ops.check_environment")
     mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
-    run = mocker.patch("subprocess.run")
+    run = mocker.patch("scripts.lib.runner._execute")
 
     argv = ["--platform", str(platform), "--dry-run", "create-ib", "--type", "file"]
     assert main([*argv, "--path", str(ib), "--force", "--yes"]) == 0

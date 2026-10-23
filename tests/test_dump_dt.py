@@ -17,7 +17,7 @@ from scripts.onec_ops import build_parser, main
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     mocker.patch("subprocess.Popen")
-    return mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    return mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
 
 
 @pytest.fixture

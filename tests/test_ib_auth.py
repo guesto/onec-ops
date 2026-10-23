@@ -198,7 +198,7 @@ def test_cli_dump_cf_with_ib_user(dry_run, tmp_path, monkeypatch, mocker, caplog
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    run = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    run = mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
     mocker.patch("scripts.onec_ops.check_environment")
     mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [

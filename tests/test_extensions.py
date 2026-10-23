@@ -88,7 +88,7 @@ def test_list_build_1c_args(ib, ctx):
 
 def test_list_cli_prints_names_to_stdout(cli, mocker, capsys):
     mocker.patch(
-        "subprocess.run",
+        "scripts.lib.runner._execute",
         side_effect=_fake_run(0, "Соединение с хранилищем конфигурации не установлено\r\nonec\r\next2\r\n"),
     )
     assert cli("list-extensions") == 0
@@ -96,7 +96,7 @@ def test_list_cli_prints_names_to_stdout(cli, mocker, capsys):
 
 
 def test_list_cli_no_extensions(cli, mocker, capsys, caplog):
-    mocker.patch("subprocess.run", side_effect=_fake_run(0, ""))
+    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
     with caplog.at_level("INFO"):
         assert cli("list-extensions") == 0
     assert capsys.readouterr().out == ""
@@ -104,7 +104,7 @@ def test_list_cli_no_extensions(cli, mocker, capsys, caplog):
 
 
 def test_list_cli_dry_run(cli, mocker, capsys):
-    run = mocker.patch("subprocess.run")
+    run = mocker.patch("scripts.lib.runner._execute")
     assert cli("--dry-run", "list-extensions") == 0
     run.assert_not_called()
     assert capsys.readouterr().out == ""
@@ -158,7 +158,7 @@ def test_target_build_1c_args(action, key, argv, tail, ib, ctx):
     [(["--extension", "onec"], "Расширение можно применить: onec"), (["--all-extensions"], "Все расширения можно применить")],
 )
 def test_check_cli_ok(cli, mocker, caplog, argv, message):
-    mocker.patch("subprocess.run", side_effect=_fake_run(0, ""))
+    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
     with caplog.at_level("INFO"):
         assert cli("check-extension", *argv) == 0
     assert message in caplog.text
@@ -166,14 +166,14 @@ def test_check_cli_ok(cli, mocker, caplog, argv, message):
 
 def test_check_cli_failure_shows_1c_reasons(cli, mocker, caplog):
     reason = "onec: Не найден объект Справочник.Номенклатура"
-    mocker.patch("subprocess.run", side_effect=_fake_run(1, reason))
+    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, reason))
     assert cli("check-extension", "--extension", "onec") == 1
     assert reason in caplog.text
     assert "можно применить" not in caplog.text
 
 
 def test_check_cli_dry_run(cli, mocker, caplog):
-    run = mocker.patch("subprocess.run")
+    run = mocker.patch("scripts.lib.runner._execute")
     with caplog.at_level("INFO"):
         assert cli("--dry-run", "check-extension", "--all-extensions") == 0
     run.assert_not_called()
@@ -184,7 +184,7 @@ def test_check_cli_dry_run(cli, mocker, caplog):
 
 
 def test_delete_cli_with_yes(cli, mocker, caplog):
-    run = mocker.patch("subprocess.run", side_effect=_fake_run(0, "Расширение удалено: onec"))
+    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, "Расширение удалено: onec"))
     with caplog.at_level("WARNING"):
         assert cli("delete-extension", "--extension", "onec", "--yes") == 0
     run.assert_called_once()
@@ -194,7 +194,7 @@ def test_delete_cli_with_yes(cli, mocker, caplog):
 
 @pytest.mark.parametrize(("answer", "code"), [("Y\n", 0), ("yes\n", 0), ("n\n", 1), ("\n", 1)])
 def test_delete_cli_interactive(cli, mocker, monkeypatch, caplog, answer, code):
-    run = mocker.patch("subprocess.run", side_effect=_fake_run(0, ""))
+    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
     stdin = io.StringIO(answer)
     stdin.isatty = lambda: True
     monkeypatch.setattr("sys.stdin", stdin)
@@ -207,7 +207,7 @@ def test_delete_cli_interactive(cli, mocker, monkeypatch, caplog, answer, code):
 
 
 def test_delete_cli_without_tty_requires_yes(cli, mocker, monkeypatch, caplog):
-    run = mocker.patch("subprocess.run")
+    run = mocker.patch("scripts.lib.runner._execute")
     stdin = io.StringIO("")
     stdin.isatty = lambda: False
     monkeypatch.setattr("sys.stdin", stdin)
@@ -217,14 +217,14 @@ def test_delete_cli_without_tty_requires_yes(cli, mocker, monkeypatch, caplog):
 
 
 def test_delete_cli_dry_run_with_yes(cli, mocker):
-    run = mocker.patch("subprocess.run")
+    run = mocker.patch("scripts.lib.runner._execute")
     assert cli("--dry-run", "delete-extension", "--extension", "onec", "--yes") == 0
     run.assert_not_called()
 
 
 def test_delete_cli_missing_extension(cli, mocker, caplog):
     message = "расширение конфигурации с указанным именем не найдено: nosuch"
-    mocker.patch("subprocess.run", side_effect=_fake_run(1, message))
+    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, message))
     assert cli("delete-extension", "--extension", "nosuch", "--yes") == 1
     assert message in caplog.text
 
