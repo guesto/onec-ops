@@ -294,3 +294,21 @@ def test_out_file_removed_when_platform_missing(tmp_path, monkeypatch, mocker):
         run_1c(["DESIGNER"], RunContext(tmp_path / "missing"))
 
     assert created and not created[0].exists()
+
+
+def test_result_contains_out_text(tmp_path, monkeypatch, mocker):
+    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    mocker.patch("subprocess.run", side_effect=_fake_run(0, "onec\r\nДругое\r\n"))
+
+    result = run_1c(["DESIGNER"], RunContext(_platform(tmp_path)))
+
+    assert result.out_text == "onec\nДругое"
+    assert result.returncode == 0
+
+
+def test_dry_run_result_has_empty_out_text(tmp_path, monkeypatch):
+    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+
+    result = run_1c(["DESIGNER"], RunContext(_platform(tmp_path), dry_run=True))
+
+    assert result.out_text == ""

@@ -27,6 +27,9 @@ ACTION_ARGS = {
     "repo-bind": ["--storage", "storage"],
     "repo-update": ["--storage", "storage"],
     "repo-add-user": ["--storage", "storage", "--user", "dev", "--rights", "ReadOnly"],
+    "list-extensions": [],
+    "check-extension": ["--extension", "ext"],
+    "delete-extension": ["--all-extensions", "--yes"],
     "open-designer": [],
     "open-enterprise": [],
 }

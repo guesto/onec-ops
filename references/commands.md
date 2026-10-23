@@ -700,3 +700,78 @@ onec-ops --ib ./base1c --dry-run repo-add-user --storage ./storage1c --user Те
 ```
 
 Так к одному хранилищу подключаются несколько баз: у каждой свой пользователь.
+
+## list-extensions
+
+Печатает имена расширений конфигурации ИБ.
+
+### Синтаксис
+
+```sh
+onec-ops list-extensions --ib PATH
+```
+
+### Поведение
+
+1. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /DumpDBCfgList -AllExtensions`.
+2. Из текста `/Out` берёт строки-идентификаторы 1С и печатает их в **stdout**
+   по одному в строке; сообщения 1С (с пробелами и знаками) отбрасываются.
+   Журнал выводится в stderr, поэтому stdout можно разбирать скриптом.
+3. Нет расширений — пустой stdout и INFO «Расширений нет».
+4. Dry-run показывает команду, stdout пустой.
+
+```sh
+onec-ops list-extensions --ib ./base1c
+for ext in $(onec-ops --log-level WARNING list-extensions --ib ./base1c); do
+    onec-ops dump-cf --ib ./base1c --to "./$ext.cfe" --extension "$ext"
+done
+```
+
+## check-extension
+
+Проверяет, можно ли применить расширение к конфигурации ИБ. ИБ не изменяется.
+
+### Синтаксис
+
+```sh
+onec-ops check-extension --ib PATH (--extension NAME | --all-extensions)
+```
+
+### Поведение
+
+1. Требует ровно одно: `--extension NAME` (непустое) или `--all-extensions`.
+2. Передаёт `/CheckCanApplyConfigurationExtensions -Extension NAME` или
+   `-AllExtensions`.
+3. Код 0 — INFO «Расширение можно применить»; код 1 — ошибка с причинами
+   из `/Out`, например «onec: Не найден объект Справочник.Номенклатура».
+
+```sh
+onec-ops check-extension --ib ./base1c --extension onec
+onec-ops check-extension --ib ./base1c --all-extensions
+```
+
+## delete-extension
+
+Удаляет расширение из ИБ **вместе с данными его объектов**.
+
+### Синтаксис
+
+```sh
+onec-ops delete-extension --ib PATH (--extension NAME | --all-extensions) [--yes]
+```
+
+### Поведение
+
+1. Требует ровно одно: `--extension NAME` (непустое) или `--all-extensions`.
+2. Пишет WARNING и запрашивает подтверждение `Y` (как `restore-dt`);
+   `--yes` — без вопроса. Без TTY и без `--yes` — ошибка; другой ответ —
+   «Отменено пользователем».
+3. Передаёт `/DeleteCfg -Extension NAME` или `-AllExtensions`.
+4. Несуществующее расширение — код 1: «расширение конфигурации с указанным
+   именем не найдено».
+5. Dry-run запрашивает подтверждение так же, но 1С не запускает.
+
+```sh
+onec-ops delete-extension --ib ./base1c --extension onec
+onec-ops delete-extension --ib ./test-ib --all-extensions --yes
+```

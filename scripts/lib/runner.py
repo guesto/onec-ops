@@ -31,6 +31,12 @@ class RunContext:
     requires_gui: bool = False
 
 
+class OneCCompletedProcess(subprocess.CompletedProcess[str]):
+    """Результат запуска 1С с текстом файла /Out."""
+
+    out_text: str = ""
+
+
 def _check_platform(platform_path: Path) -> None:
     """Проверяет, что исполняемый файл платформы доступен."""
     if not platform_path.exists() or (sys.platform != "win32" and not os.access(platform_path, os.X_OK)):
@@ -86,7 +92,7 @@ def _with_out_text(message: str, out_text: str) -> str:
     return f"{message}\n{out_text}" if out_text else message
 
 
-def run_1c(args: list[str], ctx: RunContext) -> subprocess.CompletedProcess[str]:
+def run_1c(args: list[str], ctx: RunContext) -> OneCCompletedProcess:
     """Запускает 1С и преобразует ошибки процесса в OneCFailed.
 
     Для пакетных DESIGNER/CREATEINFOBASE добавляет /Out во временный файл:
@@ -114,14 +120,14 @@ def run_1c(args: list[str], ctx: RunContext) -> subprocess.CompletedProcess[str]
 
 def _run_1c(
     args: list[str], ctx: RunContext, out_file: Path | None,
-) -> subprocess.CompletedProcess[str]:
+) -> OneCCompletedProcess:
     command = build_command(args, ctx)
     logged_command = _mask_passwords(command)
     logger.info("Команда 1С: %s", logged_command)
 
     if ctx.dry_run:
         logger.info("Dry-run: запуск 1С пропущен")
-        return subprocess.CompletedProcess(command, 0, "", "")
+        return OneCCompletedProcess(command, 0, "", "")
 
     started_at = time.monotonic()
     try:
@@ -165,7 +171,9 @@ def _run_1c(
             stderr=result.stderr,
         )
 
-    return result
+    completed = OneCCompletedProcess(result.args, result.returncode, result.stdout, result.stderr)
+    completed.out_text = out_text
+    return completed
 
 
 def _verify_display(display: str) -> bool:
