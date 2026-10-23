@@ -42,17 +42,23 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Установка
 
+### Для использования
+
+    pipx install git+https://github.com/guesto/onec-ops.git
+
+Обновление до последней версии из `main`:
+
+    pipx install --force git+https://github.com/guesto/onec-ops.git
+
+Публикация в PyPI (`pipx install onec-ops`) запланирована в v0.9.0.
+
 ### Для разработки
 
-    git clone <repo-url>
+    git clone https://github.com/guesto/onec-ops.git
     cd onec-ops
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -e ".[dev]"
-
-### Для использования (планируется)
-
-    pipx install onec-ops
 
 ## Использование
 
@@ -290,21 +296,64 @@ Dry-run проверяет ИБ и пути, показывает команду
 
 Показывает команду, но не запускает 1С.
 
-## Использование с Codex
+## Agent Skill
 
-### Установка Skill
+Навык учит агента (Claude Code, Codex) пользоваться `onec-ops`: какую
+команду выбрать, какие команды разрушают данные, как читать ошибки 1С.
+Утилиту `onec-ops` устанавливайте отдельно (см. «Установка»).
 
-Codex требует реальные файлы (не symlinks) в ~/.codex/skills/:
+Пакет навыка — три пути, которые устанавливаются вместе:
+
+    SKILL.md        # точка входа
+    references/     # commands.md, workflows.md, troubleshooting.md
+    agents/         # метаданные для Codex (openai.yaml)
+
+Ссылки в `SKILL.md` ведут только в `references/`, поэтому навык работает
+и в копии, отдельно от репозитория.
+
+### Claude Code — в проекте onec-ops
+
+Каталог `.claude/` не хранится в git. После `git clone` создайте ссылки:
+
+    mkdir -p .claude/skills/onec-ops
+    ln -sfn ../../../SKILL.md .claude/skills/onec-ops/SKILL.md
+    ln -sfn ../../../references .claude/skills/onec-ops/references
+    ln -sfn ../../../agents .claude/skills/onec-ops/agents
+
+Ссылки на `references/` и `agents/` обязательны: без них агент видит
+`SKILL.md`, но не открывает справочники. Навык обновляется вместе с `git pull`.
+
+### Claude Code — для всех проектов
+
+    mkdir -p ~/.claude/skills/onec-ops
+    cp -r SKILL.md references agents ~/.claude/skills/onec-ops/
+
+### Codex
+
+Codex не следует симлинкам — нужна копия:
 
     mkdir -p ~/.codex/skills/onec-ops
-    cp SKILL.md ~/.codex/skills/onec-ops/
-    cp -r agents ~/.codex/skills/onec-ops/
-    cp -r references ~/.codex/skills/onec-ops/
+    cp -r SKILL.md references agents ~/.codex/skills/onec-ops/
 
-Перезапустите Codex. В новом чате спросите "какие skills ты видишь?" —
-в списке должен появиться onec-ops.
+Перезапустите Codex.
 
-### Настройка sandbox
+### Обновление копий
+
+Копии в `~/.claude/skills/` и `~/.codex/skills/` не обновляются сами.
+После каждого релиза повторите `cp -r` из актуального репозитория.
+Проверить, что копия актуальна:
+
+    diff -r SKILL.md ~/.codex/skills/onec-ops/SKILL.md && \
+    diff -r references ~/.codex/skills/onec-ops/references && echo "актуально"
+
+### Проверка
+
+В новом чате агента спросите «какие навыки ты видишь?» — в списке
+должен быть `onec-ops`. Затем дайте задачу, например «выгрузи
+конфигурацию базы ./base в .cf»: агент должен выбрать навык и предложить
+`onec-ops --ib ./base dump-cf --to ./base.cf`.
+
+## Codex: sandbox
 
 В Linux-окружении с режимом `workspace-write` Codex может изолировать `/tmp`
 через tmpfs, из-за чего Xvfb не запускается. Если диагностика подтверждает
@@ -329,15 +378,6 @@ Codex требует реальные файлы (не symlinks) в ~/.codex/ski
 
 Диагностика, проверка и ограничения:
 [references/troubleshooting.md](references/troubleshooting.md).
-
-### Пример
-
-    Используй skill onec-ops, чтобы создать файловую базу 1С
-    в /tmp/test-ib
-
-Codex выполнит:
-
-    onec-ops create-ib --type file --path /tmp/test-ib
 
 ## Разработка
 

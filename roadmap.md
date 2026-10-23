@@ -308,11 +308,15 @@ v0.4.0, v0.5.0, v0.5.1, v0.5.2, v0.5.3, v0.6.0.
 
 ### Agent Skill
 
-- Канонический `SKILL.md` в корне проекта.
-- Установка в Codex через **копирование** (не symlinks) 
-  в `~/.codex/skills/onec-ops/`.
-- Установка в Claude Code через `~/.claude/skills/onec-ops/`.
-- Skill наполняется постепенно, по мере роста команд.
+- Пакет навыка: `SKILL.md` + `references/` + `agents/` в корне проекта; 
+  `SKILL.md` ссылается только внутрь пакета.
+- В проекте: симлинки `SKILL.md`, `references`, `agents` в 
+  `.claude/skills/onec-ops/` (каталог не в git, создаётся после clone).
+- Глобально: **копирование** пакета в `~/.claude/skills/onec-ops/` и 
+  `~/.codex/skills/onec-ops/` (Codex не следует симлинкам); копии 
+  обновляются вручную после релиза.
+- `tests/test_skill.py` ловит дрейф: каждая команда CLI есть в `SKILL.md` 
+  и `references/commands.md`, ссылки не выходят за пакет.
 
 ### Codex и sandbox
 
