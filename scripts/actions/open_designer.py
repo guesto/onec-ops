@@ -29,11 +29,12 @@ class OpenDesignerAction(Action):
     description = "Открывает интерактивный Конфигуратор 1С."
     requires_ib = True
     requires_gui = True
+    legacy_ib_auth_options = True
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Добавляет параметры open-designer."""
-        parser.add_argument("--user", help="Имя пользователя ИБ")
-        parser.add_argument("--password", help="Пароль пользователя ИБ")
+        parser.add_argument("--user", help="Устарело: используйте --ib-user")
+        parser.add_argument("--password", help="Устарело: используйте --ib-password")
         parser.add_argument("--no-wait", action="store_true", help="Не ждать закрытия окна")
 
     def validate(self, ns: argparse.Namespace) -> None:
@@ -58,17 +59,13 @@ class OpenDesignerAction(Action):
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
         """Собирает интерактивную команду 1С."""
         args = ["DESIGNER", "/F", str(ns.ib)]
-        if ns.user:
-            args += ["/N", ns.user]
-        if ns.password:
-            args += ["/P", ns.password]
         return args
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
         """Запускает окно один раз с ожиданием или без него."""
         ctx.requires_gui = True
         logger.info("Запуск GUI: %s", self.help)
-        args = self.build_1c_args(ns, ctx)
+        args = self.command_args(ns, ctx)
         if ns.no_wait:
             process = run_1c_popen(args, ctx)
             if process is not None:

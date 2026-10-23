@@ -97,10 +97,10 @@ def test_build_1c_args_base(ns, ctx):
     assert OpenDesignerAction().build_1c_args(ns, ctx) == ["DESIGNER", "/F", str(ns.ib)]
 
 
-def test_build_1c_args_with_user_password(ns, ctx):
-    ns.user = "Admin"
-    ns.password = "secret"
-    assert OpenDesignerAction().build_1c_args(ns, ctx) == [
+def test_command_args_with_ib_user_password(ns, ctx):
+    ns.ib_user = "Admin"
+    ns.ib_password = "secret"
+    assert OpenDesignerAction().command_args(ns, ctx) == [
         "DESIGNER",
         "/F",
         str(ns.ib),

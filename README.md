@@ -131,7 +131,7 @@ Dry-run сохраняет проверки входного файла и ИБ.
 ### Открыть Конфигуратор или клиент 1С
 
     onec-ops open-designer --ib /path/to/ib
-    onec-ops open-enterprise --ib /path/to/ib --user Администратор
+    onec-ops open-enterprise --ib /path/to/ib --ib-user Администратор
     onec-ops open-enterprise --ib /path/to/ib --execute /path/to/task.epf --c "параметр"
     onec-ops open-designer --ib /path/to/ib --no-wait
 
@@ -144,7 +144,8 @@ headless-окружениях (CI, Docker, sandbox Codex). X-сервер про
 По умолчанию команда ждёт закрытия окна, с таймаутом 600 секунд (`--timeout`).
 Флаг `--no-wait` запускает процесс через Popen и возвращает управление сразу;
 stdout/stderr направляются в DEVNULL, в журнал записывается PID.
-Обе команды принимают `--user` и `--password`; пароль маскируется в журнале команды.
+Пользователь ИБ задаётся общими `--ib-user` / `--ib-password` (см. «Пользователь ИБ»);
+прежние `--user` / `--password` у этих команд работают, но устарели.
 
     onec-ops --ib /path/to/ib --dry-run open-designer
     onec-ops --ib /path/to/ib --dry-run open-enterprise --execute ./task.epf --no-wait
@@ -244,12 +245,31 @@ Dry-run проверяет ИБ и пути, показывает команду
 Все команды поддерживают:
 
     --ib PATH              Существующая файловая ИБ (для всех команд, кроме create-ib)
+    --ib-user NAME         Пользователь ИБ (/N) для всех команд с --ib
+    --ib-password PWD      Пароль пользователя ИБ (/P)
     --platform PATH        Путь к 1cv8 (по умолчанию — из конфига или ОС)
     --config PATH          Путь к TOML-конфигу
     --log-level LEVEL      DEBUG / INFO / WARNING / ERROR
     --log-file PATH        Файл журнала
     --dry-run              Показать команду без запуска 1С
     --timeout SEC          Таймаут запуска 1С (по умолчанию 600)
+
+### Пользователь ИБ
+
+Если в ИБ есть пользователи, передайте пользователя для любой команды с `--ib`:
+
+    onec-ops --ib /path/to/ib --ib-user Пользователь --ib-password secret dump-cf --to /tmp/base.cf
+
+Пароль удобнее передавать через окружение — он не попадёт в историю shell:
+
+    export ONEC_OPS_IB_USER=Пользователь
+    export ONEC_OPS_IB_PASSWORD=secret
+    onec-ops --ib /path/to/ib dump-config --to /tmp/xml
+
+Параметры CLI важнее переменных окружения. Без пользователя 1С отвечает
+«Пользователь ИБ не идентифицирован» (код 1) — даже если у пользователя нет
+пароля. У `repo-create` и `repo-add-user` параметры `--user` / `--password`
+означают пользователя хранилища, а не ИБ.
 
 ### Пример с dry-run
 
