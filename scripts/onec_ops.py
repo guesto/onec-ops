@@ -88,9 +88,8 @@ def main(argv: list[str] | None = None) -> int:
     ns.platform = getattr(ns, "platform", None)
     ns.dry_run = getattr(ns, "dry_run", False)
     ns.timeout = getattr(ns, "timeout", 600)
-    setup_logging(ns.log_level, ns.log_file)
-
     try:
+        setup_logging(ns.log_level, ns.log_file)
         config = load_config(ns.config)
         action = next(item for item in get_actions() if item.name == ns.action)
         _resolve_ib_auth(ns, action)

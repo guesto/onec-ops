@@ -7,6 +7,25 @@
 
 ## [Unreleased]
 
+## [0.8.3] — 2026-10-24
+
+### Fixed
+
+- Пустой или состоящий из пробелов `--extension` отклоняется в командах
+  `dump-config`, `load-config`, `dump-cf` и `load-cf`, вместо молчаливого выбора
+  основной конфигурации или передачи пустого имени платформе.
+- Относительный путь к платформе из CLI, окружения или TOML приводится
+  к абсолютному: `--platform ./1cv8` больше не ищет файл через `PATH`.
+- Каталог больше не принимается за исполняемый файл платформы, в том числе
+  при `--dry-run`.
+- Ошибки открытия журнала и подготовки каталога новой ИБ выводятся
+  понятным сообщением с кодом 1 вместо Python traceback.
+
+### Added
+
+- 19 регрессионных проверок валидации аргументов, путей платформы и файловых
+  ошибок; всего 506 тестов, покрытие 98%.
+
 ## [0.8.2] — 2026-10-23
 
 ### Fixed
@@ -201,7 +220,8 @@
   Решение: `sandbox_mode = "danger-full-access"` в `~/.codex/config.toml`.
 - `create-ib --type server` — заглушка (v0.1.1 отложен).
 
-[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/guesto/onec-ops/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/guesto/onec-ops/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/guesto/onec-ops/compare/v0.7.0...v0.8.1
 [0.7.0]: https://github.com/guesto/onec-ops/compare/v0.8.0...v0.7.0

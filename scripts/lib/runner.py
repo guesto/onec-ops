@@ -41,7 +41,7 @@ class OneCCompletedProcess(subprocess.CompletedProcess[str]):
 
 def _check_platform(platform_path: Path) -> None:
     """Проверяет, что исполняемый файл платформы доступен."""
-    if not platform_path.exists() or (sys.platform != "win32" and not os.access(platform_path, os.X_OK)):
+    if not platform_path.is_file() or (sys.platform != "win32" and not os.access(platform_path, os.X_OK)):
         raise PlatformNotFound(f"Платформа 1С не найдена или не исполняема: {platform_path}")
 
 

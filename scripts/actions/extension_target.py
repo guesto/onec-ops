@@ -13,14 +13,19 @@ def add_extension_target(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--all-extensions", action="store_true", help="Все расширения")
 
 
+def validate_extension_name(name: str | None) -> None:
+    """Отклоняет явно переданное пустое имя расширения."""
+    if name is not None and not name.strip():
+        raise OneCOpsError("Имя расширения --extension не может быть пустым.")
+
+
 def validate_extension_target(ns: argparse.Namespace, *, required: bool = True) -> None:
     """Проверяет выбор расширения: не больше одного варианта, при required — ровно один."""
     if ns.extension is not None and ns.all_extensions:
         raise OneCOpsError("--extension и --all-extensions взаимоисключающие.")
     if required and ns.extension is None and not ns.all_extensions:
         raise OneCOpsError("Укажите --extension NAME или --all-extensions.")
-    if ns.extension is not None and not ns.extension.strip():
-        raise OneCOpsError("Имя расширения --extension не может быть пустым.")
+    validate_extension_name(ns.extension)
 
 
 def extension_target_args(ns: argparse.Namespace) -> list[str]:

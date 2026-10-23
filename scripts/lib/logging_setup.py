@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from .exceptions import OneCOpsError
+
 _FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
@@ -23,14 +25,18 @@ def setup_logging(level: str = "INFO", log_file: Path | None = None) -> None:
     if log_file is None:
         return
 
-    log_path = Path(log_file).resolve()
-    if any(
-        getattr(handler, "_onec_ops_log_path", None) == log_path
-        for handler in root_logger.handlers
-    ):
-        return
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    log_path = Path(log_file)
+    try:
+        log_path = log_path.resolve()
+        if any(
+            getattr(handler, "_onec_ops_log_path", None) == log_path
+            for handler in root_logger.handlers
+        ):
+            return
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    except OSError as error:
+        raise OneCOpsError(f"Не удалось открыть файл журнала {log_path}: {error}") from error
     file_handler._onec_ops_log_path = log_path  # type: ignore[attr-defined]
     file_handler.setFormatter(formatter)
     root_logger.addHandler(file_handler)

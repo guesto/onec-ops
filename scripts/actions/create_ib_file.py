@@ -45,7 +45,10 @@ class CreateIbFileAction(Action):
             )
         if ns.path is None:
             raise OneCOpsError("Для --type file обязательно укажите --path.")
-        database_file = Path(ns.path) / "1Cv8.1CD"
+        path = Path(ns.path)
+        if path.exists() and not path.is_dir():
+            raise OneCOpsError(f"--path должен указывать на каталог: {path}")
+        database_file = path / "1Cv8.1CD"
         if not database_file.exists():
             return
         if not ns.force:
@@ -82,10 +85,13 @@ class CreateIbFileAction(Action):
         if ns.ib_type != "file":
             return
         path = Path(ns.path).resolve()
-        if ns.force and (path / "1Cv8.1CD").exists():
-            if ctx.dry_run:
-                logger.info("Dry-run: существующая ИБ не удаляется: %s", path)
-                return
-            logger.warning("Удаляю существующую ИБ: %s", path)
-            shutil.rmtree(path)
-        path.mkdir(parents=True, exist_ok=True)
+        try:
+            if ns.force and (path / "1Cv8.1CD").exists():
+                if ctx.dry_run:
+                    logger.info("Dry-run: существующая ИБ не удаляется: %s", path)
+                    return
+                logger.warning("Удаляю существующую ИБ: %s", path)
+                shutil.rmtree(path)
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as error:
+            raise OneCOpsError(f"Не удалось подготовить каталог ИБ {path}: {error}") from error

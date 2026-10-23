@@ -9,6 +9,7 @@ from scripts.lib.exceptions import OneCOpsError
 from scripts.lib.runner import RunContext
 
 from .base import Action
+from .extension_target import validate_extension_target
 
 
 class LoadConfigAction(Action):
@@ -41,8 +42,7 @@ class LoadConfigAction(Action):
     def validate(self, ns: argparse.Namespace) -> None:
         """Проверяет ИБ, выбор расширений и исходную XML-выгрузку."""
         super().validate(ns)
-        if ns.extension and ns.all_extensions:
-            raise OneCOpsError("--extension и --all-extensions взаимоисключающие.")
+        validate_extension_target(ns, required=False)
         if ns.from_ is None:
             raise OneCOpsError("Обязательно укажите --from.")
         path = Path(ns.from_)

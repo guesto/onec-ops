@@ -11,6 +11,7 @@ from scripts.lib.exceptions import OneCOpsError
 from scripts.lib.runner import RunContext
 
 from .base import Action
+from .extension_target import validate_extension_target
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +43,7 @@ class DumpConfigAction(Action):
     def validate(self, ns: argparse.Namespace) -> None:
         """Проверяет ИБ, выбор расширений и каталог выгрузки."""
         super().validate(ns)
-        if ns.extension and ns.all_extensions:
-            raise OneCOpsError("--extension и --all-extensions взаимоисключающие.")
+        validate_extension_target(ns, required=False)
         if ns.to is None:
             raise OneCOpsError("Обязательно укажите --to.")
         path = Path(ns.to).resolve()

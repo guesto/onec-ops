@@ -35,11 +35,13 @@ def load_config(path: Path | None) -> dict:
 
 
 def resolve_platform(cli_path: Path | None, config: dict) -> Path:
-    """Выбирает путь к платформе по заданному приоритету."""
+    """Выбирает путь к платформе и делает пользовательский путь абсолютным."""
     if cli_path is not None:
-        return Path(cli_path)
-    if environment_path := os.environ.get("ONEC_OPS_PLATFORM"):
-        return Path(environment_path)
-    if config_path := config.get("platform"):
-        return Path(config_path)
-    return _WINDOWS_PLATFORM if sys.platform == "win32" else _LINUX_PLATFORM
+        platform_path = Path(cli_path)
+    elif environment_path := os.environ.get("ONEC_OPS_PLATFORM"):
+        platform_path = Path(environment_path)
+    elif config_path := config.get("platform"):
+        platform_path = Path(config_path)
+    else:
+        return _WINDOWS_PLATFORM if sys.platform == "win32" else _LINUX_PLATFORM
+    return platform_path.absolute()

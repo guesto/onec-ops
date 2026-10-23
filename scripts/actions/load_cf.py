@@ -10,6 +10,7 @@ from scripts.lib.exceptions import OneCOpsError
 from scripts.lib.runner import RunContext
 
 from .base import Action
+from .extension_target import validate_extension_name
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class LoadCfAction(Action):
     def validate(self, ns: argparse.Namespace) -> None:
         """Проверяет ИБ и непустой входной файл."""
         super().validate(ns)
+        validate_extension_name(ns.extension)
         if ns.from_ is None:
             raise OneCOpsError("Обязательно укажите --from.")
         path = Path(ns.from_)
