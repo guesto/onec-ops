@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- Команда `update-db` — применение загруженной конфигурации к БД (`/UpdateDBCfg`):
+  `--extension` / `--all-extensions`, `--dynamic` / `--no-dynamic`, `--warnings-as-errors`.
+- Skill: `update-db` в списке разрушающих команд; после `repo-bind` / `repo-update` —
+  `update-db`; сценарий «Изменения из хранилища в БД».
+
 ## [0.8.0] — 2026-10-23
 
 ### Changed
