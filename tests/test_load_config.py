@@ -100,6 +100,16 @@ def test_validate_extension_without_configuration_xml(tmp_path):
     LoadConfigAction().validate(ns)
 
 
+def test_validate_all_extensions_without_root_configuration_xml(tmp_path):
+    ns = _namespace(tmp_path, all_extensions=True)
+    # DumpConfigToFiles -AllExtensions creates one subdirectory per extension.
+    for name in ("FirstExtension", "ВтороеРасширение"):
+        extension = ns.from_ / name
+        extension.mkdir(parents=True)
+        (extension / "Configuration.xml").write_text("<Configuration/>", encoding="utf-8")
+    LoadConfigAction().validate(ns)
+
+
 def test_validate_missing_from(tmp_path):
     with pytest.raises(OneCOpsError, match="--from"):
         LoadConfigAction().validate(_namespace(tmp_path, from_=None))

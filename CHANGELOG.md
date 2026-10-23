@@ -7,6 +7,25 @@
 
 ## [Unreleased]
 
+## [0.8.2] — 2026-10-23
+
+### Fixed
+
+- `load-config --all-extensions` принимает каталог, созданный
+  `dump-config --all-extensions`: `Configuration.xml` находится в подкаталогах
+  расширений и больше не требуется в корне.
+- Ошибки чтения и разбора TOML-конфига, а также неверный тип `platform`
+  выводятся с путём файла и кодом 1 вместо Python traceback.
+
+### Changed
+
+- Версия Python-пакета синхронизирована с релизом: `0.8.2`.
+
+### Added
+
+- 8 регрессионных проверок загрузки всех расширений и некорректного конфига;
+  всего 487 тестов, покрытие 98%.
+
 ## [0.8.1] — 2026-10-23
 
 ### Fixed
@@ -182,7 +201,8 @@
   Решение: `sandbox_mode = "danger-full-access"` в `~/.codex/config.toml`.
 - `create-ib --type server` — заглушка (v0.1.1 отложен).
 
-[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/guesto/onec-ops/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/guesto/onec-ops/compare/v0.7.0...v0.8.1
 [0.7.0]: https://github.com/guesto/onec-ops/compare/v0.8.0...v0.7.0
 [0.8.0]: https://github.com/guesto/onec-ops/compare/v0.6.0...v0.8.0
