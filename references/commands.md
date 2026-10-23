@@ -1,5 +1,57 @@
 # Команды onec-ops
 
+Справочник всех команд. Правила безопасности и выбор команды — в
+[SKILL.md](../SKILL.md); сценарии — в [workflows.md](workflows.md);
+ошибки — в [troubleshooting.md](troubleshooting.md).
+
+## Оглавление
+
+- [Общие параметры](#общие-параметры) · [Коды возврата и вывод](#коды-возврата-и-вывод) · [Пользователь ИБ](#пользователь-иб)
+- ИБ: [create-ib](#create-ib) · [dump-dt](#dump-dt) · [restore-dt](#restore-dt)
+- Конфигурация: [dump-config](#dump-config) · [load-config](#load-config) · [dump-cf](#dump-cf) · [load-cf](#load-cf)
+- Расширения: [list-extensions](#list-extensions) · [check-extension](#check-extension) · [delete-extension](#delete-extension)
+- Обработки и отчёты: [dump-epf](#dump-epf) · [load-epf](#load-epf)
+- Хранилище: [repo-create](#repo-create) · [repo-bind](#repo-bind) · [repo-update](#repo-update) · [repo-add-user](#repo-add-user)
+- GUI: [open-designer](#open-designer) · [open-enterprise](#open-enterprise)
+
+## Общие параметры
+
+Указываются до или после имени команды:
+
+```text
+--ib PATH               Файловая ИБ с 1Cv8.1CD (для всех команд, кроме create-ib)
+--ib-user NAME          Пользователь ИБ (/N), см. «Пользователь ИБ»
+--ib-password PWD       Пароль пользователя ИБ (/P)
+--platform PATH         Путь к 1cv8
+--config PATH           TOML-конфиг (по умолчанию ~/.config/onec-ops/config.toml)
+--log-level LEVEL       DEBUG / INFO / WARNING / ERROR (по умолчанию INFO)
+--log-file PATH         Дублировать журнал в файл
+--dry-run               Проверить аргументы и показать команду 1С без запуска
+--timeout SEC           Таймаут запуска 1С (по умолчанию 600)
+```
+
+Путь к платформе выбирается так: `--platform` → переменная
+`ONEC_OPS_PLATFORM` → ключ `platform` в TOML-конфиге →
+`/opt/1cv8/x86_64/8.5.1.1343/1cv8` (Linux) или
+`C:\Program Files\1cv8\8.5.1.1343\bin\1cv8.exe` (Windows).
+
+```toml
+# ~/.config/onec-ops/config.toml
+platform = "/opt/1cv8/x86_64/8.3.25.1374/1cv8"
+```
+
+## Коды возврата и вывод
+
+| Код | Значение |
+| --- | --- |
+| 0 | Успех |
+| 1 | Ошибка проверки или 1С: текст 1С (из `/Out`) — после строки «1С завершилась с ненулевым кодом» |
+| 2 | Ошибка аргументов (argparse): неизвестный или отсутствующий параметр |
+| 130 | Прервано пользователем (Ctrl+C) |
+
+Журнал пишется в stderr (и в `--log-file`). В stdout пишет только
+`list-extensions`. Пароли в журнале заменены на `***`.
+
 ## Пользователь ИБ
 
 Все команды с `--ib` принимают пользователя ИБ — общие параметры, которые
@@ -43,8 +95,8 @@ onec-ops create-ib --type {file,server} [параметры]
 --path PATH             Путь к файловой ИБ (для --type file)
 --force                 Удалить существующую ИБ и создать заново
 --yes                   Подтвердить --force без интерактива (для CI)
---server SRV            Сервер 1С (для --type server, v0.1.1)
---ref NAME              Имя ИБ на сервере (для --type server, v0.1.1)
+--server SRV            Сервер 1С (для --type server, не поддержано — v0.3.1)
+--ref NAME              Имя ИБ на сервере (для --type server, не поддержано — v0.3.1)
 ```
 
 ### Поведение
@@ -53,6 +105,7 @@ onec-ops create-ib --type {file,server} [параметры]
 2. С --force без --yes в TTY — запрос Y/n.
 3. С --force без --yes в non-TTY — ошибка с подсказкой --force --yes.
 4. С --force --yes — удаление каталога через shutil.rmtree и создание заново.
+5. Dry-run выполняет проверки и подтверждение, но существующую ИБ не удаляет.
 
 ### Примеры
 
