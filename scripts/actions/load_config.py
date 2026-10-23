@@ -50,7 +50,7 @@ class LoadConfigAction(Action):
             raise OneCOpsError(f"Каталог --from не существует: {path}")
         if not path.is_dir():
             raise OneCOpsError(f"--from должен быть каталогом: {path}")
-        if not ns.extension and not (path / "Configuration.xml").is_file():
+        if not (ns.extension or ns.all_extensions) and not (path / "Configuration.xml").is_file():
             raise OneCOpsError(f"В каталоге --from отсутствует файл Configuration.xml: {path}")
 
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:

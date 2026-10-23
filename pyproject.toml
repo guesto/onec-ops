@@ -1,6 +1,6 @@
 [project]
 name = "onec-ops"
-version = "0.1.0.dev0"
+version = "0.8.2"
 description = "CLI-утилита и Agent Skill для пакетных операций 1С:Предприятие"
 readme = "README.md"
 requires-python = ">=3.11"

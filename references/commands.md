@@ -204,7 +204,9 @@ onec-ops load-config --ib PATH --from PATH [--extension NAME | --all-extensions]
 ### Поведение
 
 1. Проверяет наличие файла `1Cv8.1CD` в ИБ и существование каталога `--from`.
-2. Проверяет файл `Configuration.xml`; при `--extension NAME` проверка пропускается.
+2. Для основной конфигурации проверяет `Configuration.xml` в корне `--from`.
+   При `--extension NAME` или `--all-extensions` эта проверка пропускается;
+   для всех расширений передавайте общий каталог выгрузки с подкаталогами расширений.
 3. `--extension` и `--all-extensions` взаимоисключающие.
 4. Передаёт 1С `/LoadConfigFromFiles` и `-updateConfigDumpInfo`.
 5. С `--update-db-cfg` добавляет `/UpdateDBCfg` после параметров загрузки.
