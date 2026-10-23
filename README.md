@@ -22,6 +22,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `dump-epf` / `load-epf` — разборка и сборка внешних обработок `.epf` и отчётов `.erf` в XML.
 - `dump-dt` / `restore-dt` — резервное копирование и восстановление базы через `.dt`.
 - `repo-create` / `repo-bind` / `repo-update` / `repo-add-user` — файловое хранилище конфигурации.
+- `list-extensions` / `check-extension` / `delete-extension` — список, проверка и удаление расширений.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -110,6 +111,18 @@ Dry-run требует существующей ИБ и корректного �
 
     onec-ops dump-cf --ib /path/to/ib --to /path/to/ext.cfe --extension Имя
     onec-ops load-cf --ib /path/to/ib --from /path/to/ext.cfe --extension Имя --update-db-cfg
+
+Список, проверка и удаление расширений:
+
+    onec-ops list-extensions --ib /path/to/ib
+    onec-ops check-extension --ib /path/to/ib --extension Имя
+    onec-ops delete-extension --ib /path/to/ib --extension Имя
+
+`list-extensions` печатает имена в stdout по одному в строке. `check-extension`
+(`--extension Имя` или `--all-extensions`) не меняет ИБ: код 0 — расширение
+можно применить, код 1 — причины 1С в выводе. `delete-extension` удаляет
+расширение вместе с данными его объектов и требует подтверждения `Y`;
+`--yes` — без вопроса (CI).
 
 Команды выгрузки создают родительские каталоги и предупреждают о перезаписи
 существующего файла. Команды загрузки требуют существующий непустой файл.

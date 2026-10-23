@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- Команда `list-extensions` — список расширений ИБ в stdout.
+- Команда `check-extension` — проверка, можно ли применить расширение.
+- Команда `delete-extension` — удаление расширения с подтверждением (`--yes` для CI).
+- `run_1c` возвращает текст `/Out` (`OneCCompletedProcess.out_text`).
+
 ## [0.5.3] — 2026-10-23
 
 ### Added
