@@ -30,12 +30,13 @@ class OpenEnterpriseAction(Action):
     description = "Открывает клиент 1С:Предприятие."
     requires_ib = True
     requires_gui = True
+    legacy_ib_auth_options = True
     path_args = ("execute",)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Добавляет параметры open-enterprise."""
-        parser.add_argument("--user", help="Имя пользователя ИБ")
-        parser.add_argument("--password", help="Пароль пользователя ИБ")
+        parser.add_argument("--user", help="Устарело: используйте --ib-user")
+        parser.add_argument("--password", help="Устарело: используйте --ib-password")
         parser.add_argument("--execute", type=Path, help="Путь к обработке .epf")
         parser.add_argument("--c", help="Параметр запуска 1С")
         parser.add_argument("--no-wait", action="store_true", help="Не ждать закрытия окна")
@@ -62,10 +63,6 @@ class OpenEnterpriseAction(Action):
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
         """Собирает интерактивную команду 1С."""
         args = ["ENTERPRISE", "/F", str(ns.ib)]
-        if ns.user:
-            args += ["/N", ns.user]
-        if ns.password:
-            args += ["/P", ns.password]
         if ns.execute:
             args += ["/Execute", str(Path(ns.execute).resolve())]
         if ns.c:
@@ -76,7 +73,7 @@ class OpenEnterpriseAction(Action):
         """Запускает окно один раз с ожиданием или без него."""
         ctx.requires_gui = True
         logger.info("Запуск GUI: %s", self.help)
-        args = self.build_1c_args(ns, ctx)
+        args = self.command_args(ns, ctx)
         if ns.no_wait:
             process = run_1c_popen(args, ctx)
             if process is not None:

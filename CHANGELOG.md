@@ -7,6 +7,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- Общие параметры `--ib-user` / `--ib-password` — пользователь ИБ (`/N`, `/P`)
+  для всех команд с `--ib`, включая пакетные.
+- Переменные окружения `ONEC_OPS_IB_USER` / `ONEC_OPS_IB_PASSWORD`.
+
+### Deprecated
+
+- `--user` / `--password` у `open-designer` и `open-enterprise` — используйте
+  `--ib-user` / `--ib-password`.
+
 ## [0.5.2] — 2026-10-22
 
 ### Added

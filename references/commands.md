@@ -1,5 +1,31 @@
 # Команды onec-ops
 
+## Пользователь ИБ
+
+Все команды с `--ib` принимают пользователя ИБ — общие параметры, которые
+можно указывать до или после имени действия:
+
+```text
+--ib-user NAME          Пользователь ИБ (/N)
+--ib-password PWD       Пароль пользователя ИБ (/P)
+```
+
+Вместо параметров можно задать переменные окружения `ONEC_OPS_IB_USER` и
+`ONEC_OPS_IB_PASSWORD`; параметр CLI важнее переменной. Ключи `/N` и `/P`
+вставляются сразу после `/F <ib>`, пароль маскируется в журнале. Без пароля
+(или с пустым `--ib-password ""`) передаётся только `/N`; `--ib-password`
+без пользователя — ошибка. Для `create-ib` параметры запрещены, переменные
+окружения игнорируются.
+
+Если в ИБ есть пользователи, без `--ib-user` 1С сразу завершается с кодом 1:
+«Пользователь ИБ не идентифицирован». Это относится и к пользователю без
+пароля — его имя всё равно нужно передать.
+
+```sh
+onec-ops --ib ./base --ib-user Пользователь --ib-password secret dump-cf --to ./base.cf
+ONEC_OPS_IB_USER=Пользователь ONEC_OPS_IB_PASSWORD=secret onec-ops --ib ./base dump-config --to ./xml
+```
+
 ## create-ib
 
 Создаёт информационную базу 1С.
@@ -238,15 +264,17 @@ onec-ops --dry-run load-cf --ib ./base1c --from ./files/base.cf
 ### Синтаксис
 
 ```sh
-onec-ops open-designer --ib PATH [--user NAME] [--password PWD] [--no-wait]
+onec-ops open-designer --ib PATH [--ib-user NAME] [--ib-password PWD] [--no-wait]
 ```
 
 ### Параметры
 
 ```text
 --ib PATH               Файловая ИБ с 1Cv8.1CD (обязательный)
---user NAME             Пользователь ИБ
---password PWD          Пароль пользователя ИБ
+--ib-user NAME          Пользователь ИБ (общий параметр)
+--ib-password PWD       Пароль пользователя ИБ (общий параметр)
+--user NAME             Устарело: синоним --ib-user (WARNING в журнале)
+--password PWD          Устарело: синоним --ib-password
 --no-wait               Вернуть управление сразу после запуска процесса
 ```
 
@@ -279,15 +307,17 @@ onec-ops --ib ./base1c --dry-run open-designer
 ### Синтаксис
 
 ```sh
-onec-ops open-enterprise --ib PATH [--user NAME] [--password PWD] [--execute PATH] [--c PARAM] [--no-wait]
+onec-ops open-enterprise --ib PATH [--ib-user NAME] [--ib-password PWD] [--execute PATH] [--c PARAM] [--no-wait]
 ```
 
 ### Параметры
 
 ```text
 --ib PATH               Файловая ИБ с 1Cv8.1CD (обязательный)
---user NAME             Пользователь ИБ
---password PWD          Пароль пользователя ИБ
+--ib-user NAME          Пользователь ИБ (общий параметр)
+--ib-password PWD       Пароль пользователя ИБ (общий параметр)
+--user NAME             Устарело: синоним --ib-user (WARNING в журнале)
+--password PWD          Устарело: синоним --ib-password
 --execute PATH          Обработка для запуска через /Execute (абсолютный путь)
 --c PARAM               Параметр запуска /C
 --no-wait               Вернуть управление сразу после запуска процесса
