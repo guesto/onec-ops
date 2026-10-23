@@ -10,6 +10,7 @@ from scripts.lib.exceptions import OneCOpsError
 from scripts.lib.runner import RunContext
 
 from .base import Action
+from .extension_target import validate_extension_name
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class DumpCfAction(Action):
     def validate(self, ns: argparse.Namespace) -> None:
         """Проверяет ИБ и предупреждает о перезаписи файла."""
         super().validate(ns)
+        validate_extension_name(ns.extension)
         if ns.to is None:
             raise OneCOpsError("Обязательно укажите --to.")
         path = Path(ns.to)
