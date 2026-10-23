@@ -8,7 +8,7 @@
 
 - [Общие параметры](#общие-параметры) · [Коды возврата и вывод](#коды-возврата-и-вывод) · [Пользователь ИБ](#пользователь-иб)
 - ИБ: [create-ib](#create-ib) · [dump-dt](#dump-dt) · [restore-dt](#restore-dt)
-- Конфигурация: [dump-config](#dump-config) · [load-config](#load-config) · [dump-cf](#dump-cf) · [load-cf](#load-cf)
+- Конфигурация: [dump-config](#dump-config) · [load-config](#load-config) · [dump-cf](#dump-cf) · [load-cf](#load-cf) · [update-db](#update-db)
 - Расширения: [list-extensions](#list-extensions) · [check-extension](#check-extension) · [delete-extension](#delete-extension)
 - Обработки и отчёты: [dump-epf](#dump-epf) · [load-epf](#load-epf)
 - Хранилище: [repo-create](#repo-create) · [repo-bind](#repo-bind) · [repo-update](#repo-update) · [repo-add-user](#repo-add-user)
@@ -830,4 +830,46 @@ onec-ops delete-extension --ib PATH (--extension NAME | --all-extensions) [--yes
 ```sh
 onec-ops delete-extension --ib ./base1c --extension onec
 onec-ops delete-extension --ib ./test-ib --all-extensions --yes
+```
+
+## update-db
+
+Применяет к базе данных конфигурацию, уже загруженную в ИБ (`/UpdateDBCfg`).
+Нужна после `load-cf` / `load-config` без `--update-db-cfg`, после `repo-bind`
+и `repo-update` (они меняют только конфигурацию ИБ).
+
+### Синтаксис
+
+```sh
+onec-ops update-db --ib PATH [--extension NAME | --all-extensions]
+                   [--dynamic | --no-dynamic] [--warnings-as-errors]
+```
+
+### Параметры
+
+```text
+--extension NAME        Применить только это расширение (-Extension)
+--all-extensions        Применить все расширения (-AllExtensions)
+--dynamic               Динамическое обновление (-Dynamic+)
+--no-dynamic            Запретить динамическое обновление (-Dynamic-)
+--warnings-as-errors    Предупреждения считать ошибками (-WarningsAsErrors)
+```
+
+### Поведение
+
+1. Без выбора расширения обновляет основную конфигурацию; `--extension` и
+   `--all-extensions` взаимоисключающие.
+2. Без `--dynamic` / `--no-dynamic` режим выбирает платформа.
+3. Пишет WARNING: объекты, удалённые из конфигурации, будут удалены из БД
+   **вместе с данными**. 1С делает это без подтверждения, даже с
+   `-WarningsAsErrors`; интерактивного вопроса у команды нет.
+4. Код 0 и пустой ответ 1С — INFO «Изменений нет: конфигурация БД актуальна»;
+   иначе — изменения 1С в журнале («Новый объект», «Объект удален») и INFO
+   «Конфигурация БД обновлена».
+5. Dry-run показывает команду и не запускает 1С.
+
+```sh
+onec-ops update-db --ib ./base1c
+onec-ops update-db --ib ./base1c --extension onec --dynamic
+onec-ops --ib ./base1c --dry-run update-db --all-extensions
 ```

@@ -21,6 +21,7 @@ from .repo_bind import RepoBindAction
 from .repo_create import RepoCreateAction
 from .repo_update import RepoUpdateAction
 from .restore_dt import RestoreDtAction
+from .update_db import UpdateDbAction
 
 
 def get_actions() -> list[Action]:
@@ -44,4 +45,5 @@ def get_actions() -> list[Action]:
         ListExtensionsAction(),
         CheckExtensionAction(),
         DeleteExtensionAction(),
+        UpdateDbAction(),
     ]

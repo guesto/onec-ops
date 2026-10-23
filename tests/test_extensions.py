@@ -227,3 +227,16 @@ def test_delete_cli_missing_extension(cli, mocker, caplog):
     mocker.patch("subprocess.run", side_effect=_fake_run(1, message))
     assert cli("delete-extension", "--extension", "nosuch", "--yes") == 1
     assert message in caplog.text
+
+
+# --- необязательный выбор (update-db) ---------------------------------------
+
+
+def test_optional_target_without_choice():
+    from argparse import Namespace
+
+    from scripts.actions.extension_target import extension_target_args, validate_extension_target
+
+    ns = Namespace(extension=None, all_extensions=False)
+    validate_extension_target(ns, required=False)
+    assert extension_target_args(ns) == []

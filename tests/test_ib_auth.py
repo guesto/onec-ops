@@ -30,6 +30,7 @@ ACTION_ARGS = {
     "list-extensions": [],
     "check-extension": ["--extension", "ext"],
     "delete-extension": ["--all-extensions", "--yes"],
+    "update-db": [],
     "open-designer": [],
     "open-enterprise": [],
 }
