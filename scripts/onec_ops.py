@@ -84,8 +84,16 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _configure_stdout() -> None:
+    """Не падает на символах, которых нет в кодировке вывода (канал на Windows)."""
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(errors="backslashreplace")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Запускает CLI и возвращает код завершения."""
+    _configure_stdout()
     parser = build_parser()
     ns = parser.parse_args(argv)
     ns.log_level = getattr(ns, "log_level", "INFO")

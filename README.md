@@ -11,7 +11,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.8.4** (2026-11-06).
+**Текущая версия: v0.9.0** (2026-11-06).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -415,12 +415,15 @@ Codex не следует симлинкам — нужна копия:
 
 ## Разработка
 
-    pytest -v              # тесты
-    pytest --cov           # покрытие
-    ruff check scripts tests  # линтер
+    pytest -v                          # тесты и покрытие, порог 90%
+    ruff check scripts tests           # линтер
+    ruff format --check scripts tests  # форматирование
 
 Все unit-тесты мокают `subprocess.run` — реальные запуски 1С 
-в тестах отсутствуют.
+в тестах отсутствуют. CI запускает их на Linux и Windows, поэтому поведение
+настоящей платформы на Windows он не подтверждает.
+
+Подробнее: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Roadmap
 
