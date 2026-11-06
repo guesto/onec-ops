@@ -9,6 +9,7 @@
 - [Общие параметры](#общие-параметры) · [Коды возврата и вывод](#коды-возврата-и-вывод) · [Пользователь ИБ](#пользователь-иб)
 - ИБ: [create-ib](#create-ib) · [dump-dt](#dump-dt) · [restore-dt](#restore-dt)
 - Конфигурация: [dump-config](#dump-config) · [load-config](#load-config) · [dump-cf](#dump-cf) · [load-cf](#load-cf) · [update-db](#update-db)
+- Проверка: [check-modules](#check-modules) · [check-config](#check-config)
 - Расширения: [list-extensions](#list-extensions) · [check-extension](#check-extension) · [delete-extension](#delete-extension)
 - Обработки и отчёты: [dump-epf](#dump-epf) · [load-epf](#load-epf)
 - Хранилище: [repo-create](#repo-create) · [repo-bind](#repo-bind) · [repo-update](#repo-update) · [repo-add-user](#repo-add-user)
@@ -49,7 +50,7 @@ platform = "/opt/1cv8/x86_64/8.3.25.1374/1cv8"
 | Код | Значение |
 | --- | --- |
 | 0 | Успех |
-| 1 | Ошибка проверки или 1С: текст 1С (из `/Out`) — после строки «1С завершилась с ненулевым кодом» |
+| 1 | Ошибка проверки или 1С: текст 1С (из `/Out`) — после строки «1С завершилась с ненулевым кодом». У `check-modules` и `check-config` замечания идут после строки «Найдены замечания 1С:» |
 | 2 | Ошибка аргументов (argparse): неизвестный или отсутствующий параметр |
 | 130 | Прервано пользователем (Ctrl+C) |
 
@@ -96,7 +97,7 @@ onec-ops create-ib --type {file,server} [параметры]
 
 ```typescript
 --type file|server      Тип ИБ (обязательный)
---path PATH             Путь к файловой ИБ (для --type file)
+--path PATH             Путь к файловой ИБ (для --type file); пробелы допустимы, двойная кавычка нет
 --force                 Удалить существующую ИБ и создать заново
 --yes                   Подтвердить --force без интерактива (для CI)
 --server SRV            Сервер 1С (для --type server, не поддержано — v0.3.1)
@@ -142,6 +143,7 @@ onec-ops create-ib --type file --path /tmp/test-ib --force --yes
 ```sh
 onec-ops dump-config --ib PATH --to PATH [--format {hierarchical,plain}]
                      [--extension NAME | --all-extensions]
+                     [--object NAME ... | --list-file FILE]
 ```
 
 ### Параметры
@@ -149,9 +151,25 @@ onec-ops dump-config --ib PATH --to PATH [--format {hierarchical,plain}]
 ```text
 --ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
 --to PATH               Каталог выгрузки (обязательный)
+--object NAME           Выгрузить только этот объект, можно повторять
+--list-file FILE        Файл со списком объектов (UTF-8, по одному в строке)
 --format FORMAT         hierarchical (по умолчанию) или plain
 --extension NAME        Выгрузить одно расширение
 --all-extensions        Выгрузить все расширения
+```
+
+### Частичная выгрузка
+
+- Имя объекта: `Catalog.Клиенты` или `Catalog.Клиенты.ObjectModule` (только модуль).
+- В каталоге не будет `Configuration.xml` и `ConfigDumpInfo.xml`.
+- Пустой список отклоняется до запуска 1С: платформа выгрузила бы всю конфигурацию.
+- `--object` и `--list-file` взаимоисключающие, с `--all-extensions` не сочетаются.
+- Несуществующий объект: код 1, ничего не выгружено.
+
+```sh
+onec-ops dump-config --ib ./base1c --to ./xml --object Catalog.Клиенты --object Document.Заказ
+onec-ops dump-config --ib ./base1c --to ./xml --list-file ./objects.txt
+onec-ops dump-config --ib ./base1c --to ./xml --object Catalog.Справочник1 --extension onec
 ```
 
 ### Поведение
@@ -192,7 +210,7 @@ onec-ops --ib ./base1c --dry-run dump-config --to ./xml
 
 ```sh
 onec-ops load-config --ib PATH --from PATH [--extension NAME | --all-extensions]
-                     [--update-db-cfg]
+                     [--update-db-cfg] [--file PATH ... | --list-file FILE]
 ```
 
 ### Параметры
@@ -200,9 +218,24 @@ onec-ops load-config --ib PATH --from PATH [--extension NAME | --all-extensions]
 ```text
 --ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
 --from PATH             Каталог XML-выгрузки (обязательный)
+--file PATH             Загрузить только этот файл, путь относительно --from, можно повторять
+--list-file FILE        Файл со списком файлов (UTF-8, по одному в строке)
 --extension NAME        Загрузить одно расширение
 --all-extensions        Загрузить все расширения
 --update-db-cfg         Обновить конфигурацию БД после загрузки
+```
+
+### Частичная загрузка
+
+- Каждый файл должен существовать внутри `--from`, иначе код 1 до запуска 1С.
+- `Configuration.xml` в `--from` не требуется.
+- `-updateConfigDumpInfo` не передаётся: `ConfigDumpInfo.xml` в исходниках не меняется.
+- Пустой список отклоняется до запуска 1С: платформа загрузила бы весь каталог.
+- `--file` и `--list-file` взаимоисключающие, с `--all-extensions` не сочетаются.
+
+```sh
+onec-ops load-config --ib ./base1c --from ./xml --file Catalogs/Клиенты/Ext/ObjectModule.bsl
+onec-ops load-config --ib ./base1c --from ./xml --list-file ./files.txt --update-db-cfg
 ```
 
 ### Поведение
@@ -212,7 +245,7 @@ onec-ops load-config --ib PATH --from PATH [--extension NAME | --all-extensions]
    При `--extension NAME` или `--all-extensions` эта проверка пропускается;
    для всех расширений передавайте общий каталог выгрузки с подкаталогами расширений.
 3. `--extension` и `--all-extensions` взаимоисключающие.
-4. Передаёт 1С `/LoadConfigFromFiles` и `-updateConfigDumpInfo`.
+4. Передаёт 1С `/LoadConfigFromFiles` и `-updateConfigDumpInfo` (при полной загрузке).
 5. С `--update-db-cfg` добавляет `/UpdateDBCfg` после параметров загрузки.
 6. Все пути становятся абсолютными; dry-run сохраняет проверки и пропускает запуск 1С.
 
@@ -877,4 +910,68 @@ onec-ops update-db --ib PATH [--extension NAME | --all-extensions]
 onec-ops update-db --ib ./base1c
 onec-ops update-db --ib ./base1c --extension onec --dynamic
 onec-ops --ib ./base1c --dry-run update-db --all-extensions
+```
+
+## check-modules
+
+Проверяет синтаксис модулей (`/CheckModules`). Базу не меняет, работает и на
+конфигурации, ещё не применённой к базе данных.
+
+### Синтаксис
+
+```sh
+onec-ops check-modules --ib PATH [--mode MODE ...] [--extended]
+                       [--extension NAME | --all-extensions]
+```
+
+### Параметры
+
+```text
+--mode MODE             thin-client, web-client, server, external-connection, thick-client;
+                        можно повторять, по умолчанию все пять
+--extended              Расширенная проверка (-ExtendedModulesCheck)
+--extension NAME        Проверить расширение (-Extension)
+--all-extensions        Проверить все расширения (-AllExtensions)
+```
+
+### Поведение
+
+1. Без `--mode` передаёт все пять режимов. Сам `/CheckModules` без режимов
+   пропускает ошибки и возвращает 0, поэтому такой запуск невозможен.
+2. Один режим видит не всё: `server` пропускает ошибку в клиентском общем модуле,
+   `thin-client` пропускает ошибку в модуле объекта.
+3. Код 1С 0 — код 0 и INFO «Проверка пройдена».
+4. Код 1С 101 — код 1 и ERROR «Найдены замечания 1С:» с полным текстом 1С.
+5. Другой код — обычная ошибка запуска, код 1.
+6. С `--extended` код 1 даёт и одно предупреждение «Возможно ошибочное свойство»,
+   поэтому в старом коде этот флаг часто находит замечания.
+7. Для больших конфигураций увеличьте `--timeout`: по умолчанию 600 секунд.
+
+```sh
+onec-ops check-modules --ib ./base1c
+onec-ops check-modules --ib ./base1c --mode server --mode thin-client --extended
+onec-ops --timeout 1200 check-modules --ib ./base1c --extension onec
+```
+
+## check-config
+
+Проверяет конфигурацию (`/CheckConfig`): логическую целостность, некорректные
+ссылки и модули. Базу не меняет.
+
+### Синтаксис
+
+```sh
+onec-ops check-config --ib PATH [--mode MODE ...] [--extended]
+                      [--extension NAME | --all-extensions]
+```
+
+### Поведение
+
+1. Всегда передаёт `-ConfigLogIntegrity` и `-IncorrectReferences`.
+2. `--mode`, `--extended`, выбор расширения, коды возврата и таймаут — как у
+   [check-modules](#check-modules).
+
+```sh
+onec-ops check-config --ib ./base1c
+onec-ops check-config --ib ./base1c --extension onec
 ```

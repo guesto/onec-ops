@@ -35,6 +35,17 @@ onec-ops --ib ./base load-config --from ./src/cf --update-db-cfg
 onec-ops --ib ./base load-config --from ./src/cfe/Имя --extension Имя --update-db-cfg
 ```
 
+## Правка одного модуля
+
+Выгрузить объект, поправить, загрузить только изменённый файл и проверить
+(⚠ загрузка меняет конфигурацию базы):
+
+```sh
+onec-ops --ib ./base dump-config --to ./src/part --object Catalog.Клиенты
+onec-ops --ib ./base load-config --from ./src/part --file Catalogs/Клиенты/Ext/ObjectModule.bsl
+onec-ops --ib ./base check-modules
+```
+
 ## Бэкап перед загрузкой и откат
 
 ```sh

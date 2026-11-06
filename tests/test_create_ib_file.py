@@ -94,7 +94,24 @@ def test_build_args_uses_absolute_path(tmp_path):
         _namespace(relative_path), RunContext(tmp_path / "1cv8")
     )
 
-    assert args == ["CREATEINFOBASE", f"File={relative_path.resolve()}", "/DisableStartupMessages"]
+    assert args == ["CREATEINFOBASE", f'File="{relative_path.resolve()}"', "/DisableStartupMessages"]
+
+
+@pytest.mark.parametrize("name", ["с пробелом", "кириллица", "c;d"])
+def test_build_args_quotes_path(tmp_path, name):
+    path = tmp_path / name / "ib"
+    args = CreateIbFileAction().build_1c_args(_namespace(path), RunContext(tmp_path / "1cv8"))
+
+    assert args[1] == f'File="{path.resolve()}"'
+
+
+def test_validate_rejects_double_quote_before_creating_directory(tmp_path):
+    path = tmp_path / 'a"b' / "ib"
+
+    with pytest.raises(OneCOpsError, match="двойную кавычку"):
+        CreateIbFileAction().validate(_namespace(path))
+
+    assert not path.parent.exists()
 
 
 def test_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
