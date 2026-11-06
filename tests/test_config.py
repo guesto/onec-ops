@@ -21,21 +21,21 @@ def _no_platform_env(monkeypatch):
 
 def test_cli_wins_over_env_and_config(monkeypatch):
     monkeypatch.setenv("ONEC_OPS_PLATFORM", ENV)
-    assert resolve_platform(CLI, CONFIG) == CLI
+    assert resolve_platform(CLI, CONFIG) == CLI.absolute()
 
 
 def test_env_wins_over_config(monkeypatch):
     monkeypatch.setenv("ONEC_OPS_PLATFORM", ENV)
-    assert resolve_platform(None, CONFIG) == Path(ENV)
+    assert resolve_platform(None, CONFIG) == Path(ENV).absolute()
 
 
 def test_config_wins_over_default():
-    assert resolve_platform(None, CONFIG) == Path("/config/1cv8")
+    assert resolve_platform(None, CONFIG) == Path("/config/1cv8").absolute()
 
 
 def test_empty_env_is_ignored(monkeypatch):
     monkeypatch.setenv("ONEC_OPS_PLATFORM", "")
-    assert resolve_platform(None, CONFIG) == Path("/config/1cv8")
+    assert resolve_platform(None, CONFIG) == Path("/config/1cv8").absolute()
 
 
 @pytest.mark.parametrize(
@@ -70,13 +70,26 @@ def test_cli_uses_config_platform(tmp_path, mocker, caplog):
     platform.touch()
     platform.chmod(0o755)
     path = tmp_path / "config.toml"
-    path.write_text(f'platform = "{platform}"\n', encoding="utf-8")
+    path.write_text(f"platform = '{platform}'\n", encoding="utf-8")
     mocker.patch("scripts.onec_ops.check_environment")
     mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     with caplog.at_level("INFO"):
-        assert main(["--config", str(path), "--dry-run", "create-ib", "--type", "file",
-                     "--path", str(tmp_path / "ib")]) == 0
-    assert str(platform) in caplog.text
+        assert (
+            main(
+                [
+                    "--config",
+                    str(path),
+                    "--dry-run",
+                    "create-ib",
+                    "--type",
+                    "file",
+                    "--path",
+                    str(tmp_path / "ib"),
+                ]
+            )
+            == 0
+        )
+    assert repr(str(platform)) in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -91,7 +104,11 @@ def test_cli_uses_config_platform(tmp_path, mocker, caplog):
     ],
 )
 def test_cli_invalid_config_returns_error_without_starting_platform(
-    tmp_path, mocker, caplog, source, message,
+    tmp_path,
+    mocker,
+    caplog,
+    source,
+    message,
 ):
     from scripts.onec_ops import main
 
@@ -101,8 +118,9 @@ def test_cli_invalid_config_returns_error_without_starting_platform(
     check = mocker.patch("scripts.onec_ops.check_environment")
     ib = tmp_path / "ib"
 
-    assert main(["--config", str(config_path), "create-ib", "--type", "file",
-                 "--path", str(ib)]) == 1
+    assert (
+        main(["--config", str(config_path), "create-ib", "--type", "file", "--path", str(ib)]) == 1
+    )
 
     assert str(config_path) in caplog.text
     assert message in caplog.text
@@ -116,8 +134,20 @@ def test_cli_config_path_is_directory_returns_error(tmp_path, mocker, caplog):
     from scripts.onec_ops import main
 
     run = mocker.patch("scripts.onec_ops.run_1c")
-    assert main(["--config", str(tmp_path), "create-ib", "--type", "file",
-                 "--path", str(tmp_path / "ib")]) == 1
+    assert (
+        main(
+            [
+                "--config",
+                str(tmp_path),
+                "create-ib",
+                "--type",
+                "file",
+                "--path",
+                str(tmp_path / "ib"),
+            ]
+        )
+        == 1
+    )
     assert "Не удалось загрузить конфигурационный файл" in caplog.text
     assert str(tmp_path) in caplog.text
     run.assert_not_called()

@@ -26,8 +26,7 @@ def test_blank_extension_never_runs_main_configuration(tmp_path, mocker, caplog,
     mocker.patch("scripts.onec_ops.check_environment")
     run = mocker.patch("scripts.onec_ops.run_1c")
 
-    assert main([action, "--ib", str(ib), option, str(source),
-                 "--extension", extension]) == 1
+    assert main([action, "--ib", str(ib), option, str(source), "--extension", extension]) == 1
 
     assert "Имя расширения --extension не может быть пустым" in caplog.text
     run.assert_not_called()
@@ -67,8 +66,20 @@ def test_log_file_error_is_reported_before_platform_start(tmp_path, mocker, capl
     check = mocker.patch("scripts.onec_ops.check_environment")
     run = mocker.patch("scripts.onec_ops.run_1c")
 
-    assert main(["--log-file", str(log_file), "create-ib", "--type", "file",
-                 "--path", str(tmp_path / "ib")]) == 1
+    assert (
+        main(
+            [
+                "--log-file",
+                str(log_file),
+                "create-ib",
+                "--type",
+                "file",
+                "--path",
+                str(tmp_path / "ib"),
+            ]
+        )
+        == 1
+    )
 
     assert "Не удалось открыть файл журнала" in caplog.text
     assert str(log_file) in caplog.text
@@ -78,7 +89,10 @@ def test_log_file_error_is_reported_before_platform_start(tmp_path, mocker, capl
 
 @pytest.mark.parametrize("invalid_path", ["file", "parent-file"])
 def test_create_ib_file_path_error_is_reported_without_starting_platform(
-    tmp_path, mocker, caplog, invalid_path,
+    tmp_path,
+    mocker,
+    caplog,
+    invalid_path,
 ):
     parent = tmp_path / "file"
     parent.write_text("keep", encoding="utf-8")
@@ -110,11 +124,12 @@ def test_create_ib_removal_error_is_reported(tmp_path, mocker, caplog):
     database = tmp_path / "1Cv8.1CD"
     database.write_bytes(b"keep")
     mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.actions.create_ib_file.shutil.rmtree", side_effect=PermissionError("denied"))
+    mocker.patch(
+        "scripts.actions.create_ib_file.shutil.rmtree", side_effect=PermissionError("denied")
+    )
     run = mocker.patch("scripts.onec_ops.run_1c")
 
-    assert main(["create-ib", "--type", "file", "--path", str(tmp_path),
-                 "--force", "--yes"]) == 1
+    assert main(["create-ib", "--type", "file", "--path", str(tmp_path), "--force", "--yes"]) == 1
 
     assert "Не удалось подготовить каталог ИБ" in caplog.text
     assert str(tmp_path) in caplog.text

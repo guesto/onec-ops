@@ -94,7 +94,11 @@ def test_build_args_uses_absolute_path(tmp_path):
         _namespace(relative_path), RunContext(tmp_path / "1cv8")
     )
 
-    assert args == ["CREATEINFOBASE", f'File="{relative_path.resolve()}"', "/DisableStartupMessages"]
+    assert args == [
+        "CREATEINFOBASE",
+        f'File="{relative_path.resolve()}"',
+        "/DisableStartupMessages",
+    ]
 
 
 @pytest.mark.parametrize("name", ["с пробелом", "кириллица", "c;d"])

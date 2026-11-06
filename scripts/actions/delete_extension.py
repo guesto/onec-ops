@@ -51,7 +51,9 @@ class DeleteExtensionAction(Action):
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
         """Предупреждает о потере данных и запрашивает подтверждение."""
         label = extension_target_label(ns)
-        logger.warning("Удаление из ИБ %s: %s. Данные объектов расширения будут потеряны.", ns.ib, label)
+        logger.warning(
+            "Удаление из ИБ %s: %s. Данные объектов расширения будут потеряны.", ns.ib, label
+        )
         if ns.yes:
             logger.warning("--yes: удаляю без подтверждения")
             return

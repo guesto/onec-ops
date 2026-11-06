@@ -43,6 +43,8 @@
 ```toml
 # ~/.config/onec-ops/config.toml
 platform = "/opt/1cv8/x86_64/8.3.25.1374/1cv8"
+# Путь Windows — в одинарных кавычках: в двойных обратная косая считается экранированием
+# platform = 'C:\Program Files\1cv8\8.5.1.1343\bin\1cv8.exe'
 ```
 
 ## Коды возврата и вывод

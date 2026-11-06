@@ -15,9 +15,11 @@ from scripts.onec_ops import build_parser, main
 
 def _fake_run(returncode: int, out_text: str):
     """Имитирует 1С: пишет out_text в файл /Out (последний аргумент) в UTF-8 с BOM."""
+
     def run(command, **kwargs):
         Path(command[-1]).write_bytes(out_text.encode("utf-8-sig"))
         return subprocess.CompletedProcess(command, returncode, "", "")
+
     return run
 
 
@@ -67,7 +69,12 @@ def _ns(*argv, ib=None):
 def test_build_1c_args(argv, tail, ib, tmp_path):
     ns = _ns(*argv, ib=ib)
     assert UpdateDbAction().build_1c_args(ns, RunContext(tmp_path / "1cv8")) == [
-        "DESIGNER", "/F", str(ib), "/DisableStartupDialogs", "/UpdateDBCfg", *tail,
+        "DESIGNER",
+        "/F",
+        str(ib),
+        "/DisableStartupDialogs",
+        "/UpdateDBCfg",
+        *tail,
     ]
 
 
@@ -106,7 +113,9 @@ def test_cli_no_changes(cli, mocker, caplog):
 
 
 def test_cli_failure_shows_1c_text(cli, mocker, caplog):
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, "Ошибка обновления структуры"))
+    mocker.patch(
+        "scripts.lib.runner._execute", side_effect=_fake_run(1, "Ошибка обновления структуры")
+    )
     assert cli("update-db", "--warnings-as-errors") == 1
     assert "Ошибка обновления структуры" in caplog.text
     assert "Конфигурация БД обновлена" not in caplog.text

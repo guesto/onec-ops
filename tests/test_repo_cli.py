@@ -20,7 +20,9 @@ def _required_args(action):
 
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
-    return mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    return mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
 
 
 @pytest.mark.parametrize("action", REPO_ACTIONS, ids=lambda action: action.name)
@@ -46,7 +48,13 @@ def test_validate_requires_file_ib(action, ib_state, tmp_path):
 @pytest.mark.parametrize("action", REPO_ACTIONS, ids=lambda action: action.name)
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_cli_uses_runner_with_absolute_paths(
-    action, dry_run, tmp_path, monkeypatch, mocker, subprocess_mock, caplog,
+    action,
+    dry_run,
+    tmp_path,
+    monkeypatch,
+    mocker,
+    subprocess_mock,
+    caplog,
 ):
     monkeypatch.chdir(tmp_path)
     ib = tmp_path / "ib"
@@ -65,19 +73,26 @@ def test_cli_uses_runner_with_absolute_paths(
     if action.name == "repo-create":
         args += ["--user", "admin", "--password", "secret"]
         expected = [
-            "/ConfigurationRepositoryF", str(storage),
+            "/ConfigurationRepositoryF",
+            str(storage),
             "/ConfigurationRepositoryCreate",
         ]
     elif action.name == "repo-add-user":
         args += [
-            *ADD_USER_ARGS, "--password", "user-secret",
-            "--storage-user", "admin", "--storage-password", "secret",
+            *ADD_USER_ARGS,
+            "--password",
+            "user-secret",
+            "--storage-user",
+            "admin",
+            "--storage-password",
+            "secret",
         ]
         expected = ["/ConfigurationRepositoryF", str(storage)]
     else:
         args += ["--storage-user", "admin", "--storage-password", "secret", "--force"]
         flag = (
-            "/ConfigurationRepositoryBindCfg" if action.name == "repo-bind"
+            "/ConfigurationRepositoryBindCfg"
+            if action.name == "repo-bind"
             else "/ConfigurationRepositoryUpdateCfg"
         )
         expected = [flag, "/ConfigurationRepositoryF", str(storage)]
@@ -89,8 +104,13 @@ def test_cli_uses_runner_with_absolute_paths(
         expected += ["-v", "42", "-force"]
     elif action.name == "repo-add-user":
         expected += [
-            "/ConfigurationRepositoryAddUser", "-User", "dev",
-            "-Pwd", "user-secret", "-Rights", "LockObjects",
+            "/ConfigurationRepositoryAddUser",
+            "-User",
+            "dev",
+            "-Pwd",
+            "user-secret",
+            "-Rights",
+            "LockObjects",
         ]
     expected = ["DESIGNER", "/F", str(ib), "/DisableStartupDialogs", *expected]
     if dry_run:
@@ -101,7 +121,7 @@ def test_cli_uses_runner_with_absolute_paths(
     assert "***" in caplog.text
     if dry_run:
         subprocess_mock.assert_not_called()
-        assert str(storage) in caplog.text
+        assert repr(str(storage)) in caplog.text
         assert expected[4] in caplog.text
     else:
         subprocess_mock.assert_called_once()

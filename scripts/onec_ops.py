@@ -27,14 +27,18 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Добавляет общие параметры CLI."""
     parser.add_argument("--ib", type=Path, default=argparse.SUPPRESS, help="Путь к файловой ИБ")
     parser.add_argument("--ib-user", default=argparse.SUPPRESS, help="Пользователь ИБ (/N)")
-    parser.add_argument("--ib-password", default=argparse.SUPPRESS, help="Пароль пользователя ИБ (/P)")
+    parser.add_argument(
+        "--ib-password", default=argparse.SUPPRESS, help="Пароль пользователя ИБ (/P)"
+    )
     parser.add_argument("--platform", type=Path, default=argparse.SUPPRESS, help="Путь к 1cv8")
     parser.add_argument(
         "--log-level", choices=_LOG_LEVELS, default=argparse.SUPPRESS, help="Уровень логирования"
     )
     parser.add_argument("--log-file", type=Path, default=argparse.SUPPRESS, help="Файл журнала")
     parser.add_argument("--config", type=Path, default=argparse.SUPPRESS, help="TOML-конфиг")
-    parser.add_argument("--dry-run", action="store_true", default=argparse.SUPPRESS, help="Не запускать 1С")
+    parser.add_argument(
+        "--dry-run", action="store_true", default=argparse.SUPPRESS, help="Не запускать 1С"
+    )
     parser.add_argument("--timeout", type=int, default=argparse.SUPPRESS, help="Таймаут в секундах")
 
 
@@ -72,14 +76,24 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_arguments(parser)
     subparsers = parser.add_subparsers(dest="action", required=True)
     for action in get_actions():
-        action_parser = subparsers.add_parser(action.name, help=action.help, description=action.description)
+        action_parser = subparsers.add_parser(
+            action.name, help=action.help, description=action.description
+        )
         _add_common_arguments(action_parser)
         action.add_arguments(action_parser)
     return parser
 
 
+def _configure_stdout() -> None:
+    """Не падает на символах, которых нет в кодировке вывода (канал на Windows)."""
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(errors="backslashreplace")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Запускает CLI и возвращает код завершения."""
+    _configure_stdout()
     parser = build_parser()
     ns = parser.parse_args(argv)
     ns.log_level = getattr(ns, "log_level", "INFO")

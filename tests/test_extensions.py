@@ -20,9 +20,11 @@ TARGET_ACTIONS = [CheckExtensionAction(), DeleteExtensionAction()]
 
 def _fake_run(returncode: int, out_text: str):
     """Имитирует 1С: пишет out_text в файл /Out (последний аргумент) в UTF-8 с BOM."""
+
     def run(command, **kwargs):
         Path(command[-1]).write_bytes(out_text.encode("utf-8-sig"))
         return subprocess.CompletedProcess(command, returncode, "", "")
+
     return run
 
 
@@ -82,14 +84,21 @@ def test_parse_extension_names(out_text, expected):
 def test_list_build_1c_args(ib, ctx):
     ns = _ns(ListExtensionsAction(), ib=ib)
     assert ListExtensionsAction().build_1c_args(ns, ctx) == [
-        "DESIGNER", "/F", str(ib), "/DisableStartupDialogs", "/DumpDBCfgList", "-AllExtensions",
+        "DESIGNER",
+        "/F",
+        str(ib),
+        "/DisableStartupDialogs",
+        "/DumpDBCfgList",
+        "-AllExtensions",
     ]
 
 
 def test_list_cli_prints_names_to_stdout(cli, mocker, capsys):
     mocker.patch(
         "scripts.lib.runner._execute",
-        side_effect=_fake_run(0, "Соединение с хранилищем конфигурации не установлено\r\nonec\r\next2\r\n"),
+        side_effect=_fake_run(
+            0, "Соединение с хранилищем конфигурации не установлено\r\nonec\r\next2\r\n"
+        ),
     )
     assert cli("list-extensions") == 0
     assert capsys.readouterr().out == "onec\next2\n"
@@ -136,7 +145,10 @@ def test_target_validation_ok(action, argv, ib):
 
 @pytest.mark.parametrize(
     ("action", "key"),
-    [(CheckExtensionAction(), "/CheckCanApplyConfigurationExtensions"), (DeleteExtensionAction(), "/DeleteCfg")],
+    [
+        (CheckExtensionAction(), "/CheckCanApplyConfigurationExtensions"),
+        (DeleteExtensionAction(), "/DeleteCfg"),
+    ],
     ids=["check-extension", "delete-extension"],
 )
 @pytest.mark.parametrize(
@@ -146,7 +158,12 @@ def test_target_validation_ok(action, argv, ib):
 def test_target_build_1c_args(action, key, argv, tail, ib, ctx):
     ns = _ns(action, *argv, ib=ib)
     assert action.build_1c_args(ns, ctx) == [
-        "DESIGNER", "/F", str(ib), "/DisableStartupDialogs", key, *tail,
+        "DESIGNER",
+        "/F",
+        str(ib),
+        "/DisableStartupDialogs",
+        key,
+        *tail,
     ]
 
 
@@ -155,7 +172,10 @@ def test_target_build_1c_args(action, key, argv, tail, ib, ctx):
 
 @pytest.mark.parametrize(
     ("argv", "message"),
-    [(["--extension", "onec"], "Расширение можно применить: onec"), (["--all-extensions"], "Все расширения можно применить")],
+    [
+        (["--extension", "onec"], "Расширение можно применить: onec"),
+        (["--all-extensions"], "Все расширения можно применить"),
+    ],
 )
 def test_check_cli_ok(cli, mocker, caplog, argv, message):
     mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
@@ -184,7 +204,9 @@ def test_check_cli_dry_run(cli, mocker, caplog):
 
 
 def test_delete_cli_with_yes(cli, mocker, caplog):
-    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, "Расширение удалено: onec"))
+    run = mocker.patch(
+        "scripts.lib.runner._execute", side_effect=_fake_run(0, "Расширение удалено: onec")
+    )
     with caplog.at_level("WARNING"):
         assert cli("delete-extension", "--extension", "onec", "--yes") == 0
     run.assert_called_once()

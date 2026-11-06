@@ -31,8 +31,12 @@ def ctx(tmp_path):
 
 def _base_args(ns):
     return [
-        "DESIGNER", "/F", str(ns.ib), "/DisableStartupDialogs",
-        "/ConfigurationRepositoryF", str(Path(ns.storage).resolve()),
+        "DESIGNER",
+        "/F",
+        str(ns.ib),
+        "/DisableStartupDialogs",
+        "/ConfigurationRepositoryF",
+        str(Path(ns.storage).resolve()),
         "/ConfigurationRepositoryCreate",
     ]
 
@@ -82,7 +86,9 @@ def test_validate_storage_parent_is_file(ns):
 def test_build_1c_args_base(ns, ctx):
     assert ns.user == "Администратор"
     assert RepoCreateAction().build_1c_args(ns, ctx) == [
-        *_base_args(ns), "/ConfigurationRepositoryN", "Администратор",
+        *_base_args(ns),
+        "/ConfigurationRepositoryN",
+        "Администратор",
     ]
 
 
@@ -90,8 +96,11 @@ def test_build_1c_args_with_user_password(ns, ctx):
     ns.user = "admin"
     ns.password = "secret"
     assert RepoCreateAction().build_1c_args(ns, ctx) == [
-        *_base_args(ns), "/ConfigurationRepositoryN", "admin",
-        "/ConfigurationRepositoryP", "secret",
+        *_base_args(ns),
+        "/ConfigurationRepositoryN",
+        "admin",
+        "/ConfigurationRepositoryP",
+        "secret",
     ]
 
 

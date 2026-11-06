@@ -7,6 +7,25 @@
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-11-06
+
+### Added
+
+- CI на Linux и Windows, Python 3.11–3.14, с проверкой формата и запуска CLI.
+  Запускается и на пуш в `release/**`. Упавшие тесты видны аннотацией.
+- Порог покрытия 90%, точная версия Ruff, `.pre-commit-config.yaml`,
+  `.git-blame-ignore-revs`, `CONTRIBUTING.md`.
+
+### Fixed
+
+- `onec-ops --help` больше не падает с `UnicodeEncodeError`, если в кодировке вывода
+  нет кириллицы, например при выводе в канал на Windows.
+
+### Changed
+
+- Код отформатирован через `ruff format`.
+- Всего 572 теста, покрытие 98%.
+
 ## [0.8.4] — 2026-11-06
 
 ### Added

@@ -15,7 +15,9 @@ from scripts.onec_ops import build_parser, main
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     """Запрещает реальные дочерние процессы во всех CLI-тестах."""
-    return mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    return mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
 
 
 @pytest.mark.parametrize(
@@ -116,8 +118,8 @@ def test_cli_uses_runner_with_absolute_paths(
     if dry_run:
         assert not platform_calls
         assert flag in caplog.text
-        assert str(ib) in caplog.text
-        assert str(xml) in caplog.text
+        assert repr(str(ib)) in caplog.text
+        assert repr(str(xml)) in caplog.text
         if action_name == "load-config":
             assert "/UpdateDBCfg" in caplog.text
     else:

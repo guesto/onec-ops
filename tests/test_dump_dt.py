@@ -17,7 +17,9 @@ from scripts.onec_ops import build_parser, main
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     mocker.patch("subprocess.Popen")
-    return mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    return mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
 
 
 @pytest.fixture
@@ -139,8 +141,13 @@ def test_cli_runs_with_mocked_subprocess(ns, ctx, subprocess_mock, mocker, caplo
     mocker.patch("scripts.onec_ops.check_environment")
     mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [
-        "--platform", str(ctx.platform_path), "--ib", str(ns.ib),
-        "dump-dt", "--to", str(ns.to),
+        "--platform",
+        str(ctx.platform_path),
+        "--ib",
+        str(ns.ib),
+        "dump-dt",
+        "--to",
+        str(ns.to),
     ]
     if dry_run:
         argv += ["--dry-run"]

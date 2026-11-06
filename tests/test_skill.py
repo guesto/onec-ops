@@ -38,7 +38,9 @@ def test_frontmatter_description():
     assert len(description) <= 1024
     lowered = description.lower()
     for match in re.finditer("клиент-серверн", lowered):
-        assert lowered[: match.start()].endswith("не для "), "навык не поддерживает клиент-серверные ИБ"
+        assert lowered[: match.start()].endswith("не для "), (
+            "навык не поддерживает клиент-серверные ИБ"
+        )
 
 
 def test_skill_is_compact():

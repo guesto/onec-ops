@@ -72,7 +72,13 @@ def _write_list(tmp_path, content: bytes) -> Path:
 
 def test_dump_objects(cli, captured, tmp_path):
     code = cli(
-        "dump-config", "--to", str(tmp_path / "out"), "--object", "Catalog.А", "--object", "Document.Б"
+        "dump-config",
+        "--to",
+        str(tmp_path / "out"),
+        "--object",
+        "Catalog.А",
+        "--object",
+        "Document.Б",
     )
 
     assert code == 0
@@ -92,7 +98,9 @@ def test_dump_list_file_with_bom_crlf_and_blank_lines_keeps_user_file(cli, captu
 
 
 def test_dump_with_extension(cli, captured, tmp_path):
-    code = cli("dump-config", "--to", str(tmp_path / "out"), "--object", "Catalog.А", "--extension", "Р")
+    code = cli(
+        "dump-config", "--to", str(tmp_path / "out"), "--object", "Catalog.А", "--extension", "Р"
+    )
 
     assert code == 0
     index = captured["command"].index("-Extension")
@@ -112,7 +120,9 @@ def test_full_dump_has_no_list(cli, captured, tmp_path):
 class TestRejectedBeforeStart:
     @staticmethod
     def _target(action, tmp_path, source):
-        return ["--to", str(tmp_path / "out")] if action == "dump-config" else ["--from", str(source)]
+        return (
+            ["--to", str(tmp_path / "out")] if action == "dump-config" else ["--from", str(source)]
+        )
 
     def test_blank_value(self, action, option, value, cli, captured, tmp_path, source):
         assert cli(action, *self._target(action, tmp_path, source), option, " ") == 1
@@ -125,30 +135,47 @@ class TestRejectedBeforeStart:
         assert cli(action, *self._target(action, tmp_path, source), *argv) == 1
         assert captured["command"] is None
 
-    def test_with_all_extensions(self, action, option, value, cli, captured, tmp_path, source, caplog):
-        assert cli(action, *self._target(action, tmp_path, source), option, value, "--all-extensions") == 1
+    def test_with_all_extensions(
+        self, action, option, value, cli, captured, tmp_path, source, caplog
+    ):
+        assert (
+            cli(action, *self._target(action, tmp_path, source), option, value, "--all-extensions")
+            == 1
+        )
         assert captured["command"] is None
         assert "--all-extensions" in caplog.text
 
-    @pytest.mark.parametrize("content", [b"", b"  \r\n\r\n", b"\xef\xbb\xbf"], ids=["empty", "blank", "bom"])
-    def test_empty_list_file(self, action, option, value, content, cli, captured, tmp_path, source, caplog):
+    @pytest.mark.parametrize(
+        "content", [b"", b"  \r\n\r\n", b"\xef\xbb\xbf"], ids=["empty", "blank", "bom"]
+    )
+    def test_empty_list_file(
+        self, action, option, value, content, cli, captured, tmp_path, source, caplog
+    ):
         list_file = _write_list(tmp_path, content)
 
-        assert cli(action, *self._target(action, tmp_path, source), "--list-file", str(list_file)) == 1
+        assert (
+            cli(action, *self._target(action, tmp_path, source), "--list-file", str(list_file)) == 1
+        )
         assert captured["command"] is None
         assert "пуст" in caplog.text
 
-    def test_missing_list_file(self, action, option, value, cli, captured, tmp_path, source, caplog):
+    def test_missing_list_file(
+        self, action, option, value, cli, captured, tmp_path, source, caplog
+    ):
         missing = tmp_path / "нет.txt"
 
-        assert cli(action, *self._target(action, tmp_path, source), "--list-file", str(missing)) == 1
+        assert (
+            cli(action, *self._target(action, tmp_path, source), "--list-file", str(missing)) == 1
+        )
         assert captured["command"] is None
         assert "Traceback" not in caplog.text
 
     def test_wrong_encoding(self, action, option, value, cli, captured, tmp_path, source, caplog):
         list_file = _write_list(tmp_path, "Каталог".encode("cp1251"))
 
-        assert cli(action, *self._target(action, tmp_path, source), "--list-file", str(list_file)) == 1
+        assert (
+            cli(action, *self._target(action, tmp_path, source), "--list-file", str(list_file)) == 1
+        )
         assert captured["command"] is None
         assert "UTF-8" in caplog.text
 
@@ -163,7 +190,10 @@ def test_load_file_without_configuration_xml_and_dump_info(cli, captured, source
 def test_load_list_file_with_absolute_path_and_update_db(cli, captured, tmp_path, source):
     list_file = _write_list(tmp_path, f"{source / MODULE}\n".encode())
 
-    assert cli("load-config", "--from", str(source), "--list-file", str(list_file), "--update-db-cfg") == 0
+    assert (
+        cli("load-config", "--from", str(source), "--list-file", str(list_file), "--update-db-cfg")
+        == 0
+    )
     assert captured["list"] == [str(Path(MODULE))]
     assert captured["command"][captured["command"].index("/UpdateDBCfg") - 2] == "-listFile"
 

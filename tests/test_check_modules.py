@@ -24,7 +24,9 @@ CHECK_ARGS = {
     "check-modules": ["/CheckModules"],
     "check-config": ["/CheckConfig", "-ConfigLogIntegrity", "-IncorrectReferences"],
 }
-FINDINGS = "{Справочник.Клиенты.МодульОбъекта(5,1)}: Ожидается имя\n<<?>>КонецПроцедуры (Проверка: Сервер)"
+FINDINGS = (
+    "{Справочник.Клиенты.МодульОбъекта(5,1)}: Ожидается имя\n<<?>>КонецПроцедуры (Проверка: Сервер)"
+)
 
 
 def _fake_run(returncode: int, out_text: str):
@@ -68,7 +70,12 @@ def _args(name, ib, *argv):
 @pytest.mark.parametrize("name", ACTIONS)
 def test_all_modes_by_default(name, ib):
     assert _args(name, ib) == [
-        "DESIGNER", "/F", str(ib), "/DisableStartupDialogs", *CHECK_ARGS[name], *ALL_MODES,
+        "DESIGNER",
+        "/F",
+        str(ib),
+        "/DisableStartupDialogs",
+        *CHECK_ARGS[name],
+        *ALL_MODES,
     ]
 
 
@@ -111,7 +118,8 @@ def test_validate_extension_target(name, argv, ib):
 @pytest.mark.parametrize("name", ACTIONS)
 def test_success(name, cli, mocker, caplog):
     run = mocker.patch(
-        "scripts.lib.runner._execute", side_effect=_fake_run(0, "Синтаксических ошибок не обнаружено!")
+        "scripts.lib.runner._execute",
+        side_effect=_fake_run(0, "Синтаксических ошибок не обнаружено!"),
     )
     caplog.set_level("INFO")
 

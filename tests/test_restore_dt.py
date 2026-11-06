@@ -17,7 +17,9 @@ from scripts.onec_ops import build_parser, main
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     mocker.patch("subprocess.Popen")
-    return mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    return mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
 
 
 @pytest.fixture
@@ -172,14 +174,19 @@ def test_pre_run_non_tty_requires_force_yes(ns, ctx, stdin, force):
 
 
 @pytest.mark.parametrize("dry_run", [False, True])
-def test_cli_runs_with_mocked_subprocess(
-    ns, ctx, subprocess_mock, mocker, stdin, caplog, dry_run
-):
+def test_cli_runs_with_mocked_subprocess(ns, ctx, subprocess_mock, mocker, stdin, caplog, dry_run):
     mocker.patch("scripts.onec_ops.check_environment")
     mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [
-        "--platform", str(ctx.platform_path), "--ib", str(ns.ib),
-        "restore-dt", "--from", str(ns.from_), "--force", "--yes",
+        "--platform",
+        str(ctx.platform_path),
+        "--ib",
+        str(ns.ib),
+        "restore-dt",
+        "--from",
+        str(ns.from_),
+        "--force",
+        "--yes",
     ]
     if dry_run:
         argv += ["--dry-run"]
@@ -206,10 +213,21 @@ def test_cli_non_tty_never_restores_without_force_yes(
 ):
     mocker.patch("scripts.onec_ops.check_environment")
     stdin.isatty.return_value = False
-    assert main([
-        "--platform", str(ctx.platform_path), "--ib", str(ns.ib),
-        "restore-dt", "--from", str(ns.from_), *flags,
-    ]) == 1
+    assert (
+        main(
+            [
+                "--platform",
+                str(ctx.platform_path),
+                "--ib",
+                str(ns.ib),
+                "restore-dt",
+                "--from",
+                str(ns.from_),
+                *flags,
+            ]
+        )
+        == 1
+    )
     assert "--force --yes" in caplog.text
     subprocess_mock.assert_not_called()
     stdin.readline.assert_not_called()
@@ -218,9 +236,20 @@ def test_cli_non_tty_never_restores_without_force_yes(
 def test_cli_cancellation_never_starts_restore(ns, ctx, subprocess_mock, mocker, stdin):
     mocker.patch("scripts.onec_ops.check_environment")
     stdin.readline.return_value = "n\n"
-    assert main([
-        "--platform", str(ctx.platform_path), "--ib", str(ns.ib),
-        "restore-dt", "--from", str(ns.from_), "--force",
-    ]) == 1
+    assert (
+        main(
+            [
+                "--platform",
+                str(ctx.platform_path),
+                "--ib",
+                str(ns.ib),
+                "restore-dt",
+                "--from",
+                str(ns.from_),
+                "--force",
+            ]
+        )
+        == 1
+    )
     subprocess_mock.assert_not_called()
     assert (ns.ib / "1Cv8.1CD").read_bytes() == b"existing database"
