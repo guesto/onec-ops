@@ -19,7 +19,9 @@ def gui_environment(monkeypatch, mocker):
     monkeypatch.setenv("DISPLAY", ":99")
     mocker.patch("scripts.actions.open_designer._verify_display", return_value=True)
     mocker.patch("scripts.actions.open_designer._detect_codex_sandbox", return_value=False)
-    run = mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    run = mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
     popen = mocker.patch("subprocess.Popen", return_value=mocker.Mock(pid=1234))
     return run, popen
 

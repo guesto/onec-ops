@@ -23,10 +23,16 @@ def ns(tmp_path):
     ib = tmp_path / "ib"
     ib.mkdir()
     (ib / "1Cv8.1CD").touch()
-    parsed = _parser().parse_args([
-        "--storage", str(tmp_path / "storage"), "--user", "Разработчик2",
-        "--rights", "LockObjects",
-    ])
+    parsed = _parser().parse_args(
+        [
+            "--storage",
+            str(tmp_path / "storage"),
+            "--user",
+            "Разработчик2",
+            "--rights",
+            "LockObjects",
+        ]
+    )
     parsed.ib = ib
     return parsed
 
@@ -38,8 +44,12 @@ def ctx(tmp_path):
 
 def _base_args(ns):
     return [
-        "DESIGNER", "/F", str(ns.ib), "/DisableStartupDialogs",
-        "/ConfigurationRepositoryF", str(Path(ns.storage).resolve()),
+        "DESIGNER",
+        "/F",
+        str(ns.ib),
+        "/DisableStartupDialogs",
+        "/ConfigurationRepositoryF",
+        str(Path(ns.storage).resolve()),
     ]
 
 
@@ -74,20 +84,35 @@ def test_validate_empty_user(ns, user):
 
 def test_invalid_rights_rejected_by_parser(tmp_path, capsys):
     with pytest.raises(SystemExit) as error:
-        _parser().parse_args([
-            "--storage", str(tmp_path), "--user", "dev", "--rights", "Everything",
-        ])
+        _parser().parse_args(
+            [
+                "--storage",
+                str(tmp_path),
+                "--user",
+                "dev",
+                "--rights",
+                "Everything",
+            ]
+        )
     assert error.value.code == 2
     assert "--rights" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
-    "rights", ["ReadOnly", "LockObjects", "ManageConfigurationVersions", "Administration"],
+    "rights",
+    ["ReadOnly", "LockObjects", "ManageConfigurationVersions", "Administration"],
 )
 def test_parser_accepts_all_rights(tmp_path, rights):
-    parsed = _parser().parse_args([
-        "--storage", str(tmp_path), "--user", "dev", "--rights", rights,
-    ])
+    parsed = _parser().parse_args(
+        [
+            "--storage",
+            str(tmp_path),
+            "--user",
+            "dev",
+            "--rights",
+            rights,
+        ]
+    )
     assert parsed.rights == rights
 
 
@@ -100,7 +125,10 @@ def test_build_1c_args_minimal(ns, ctx, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     ns.storage = Path("storage")
     assert RepoAddUserAction().build_1c_args(ns, ctx) == [
-        *_base_args(ns), *_add_user_args(ns), "-Rights", "LockObjects",
+        *_base_args(ns),
+        *_add_user_args(ns),
+        "-Rights",
+        "LockObjects",
     ]
 
 
@@ -110,14 +138,24 @@ def test_build_1c_args_with_passwords(ns, ctx):
     ns.storage_password = "admin-secret"
     assert RepoAddUserAction().build_1c_args(ns, ctx) == [
         *_base_args(ns),
-        "/ConfigurationRepositoryN", "admin",
-        "/ConfigurationRepositoryP", "admin-secret",
-        *_add_user_args(ns), "-Pwd", "user-secret", "-Rights", "LockObjects",
+        "/ConfigurationRepositoryN",
+        "admin",
+        "/ConfigurationRepositoryP",
+        "admin-secret",
+        *_add_user_args(ns),
+        "-Pwd",
+        "user-secret",
+        "-Rights",
+        "LockObjects",
     ]
 
 
 def test_build_1c_args_with_restore_deleted(ns, ctx):
     ns.restore_deleted = True
     assert RepoAddUserAction().build_1c_args(ns, ctx) == [
-        *_base_args(ns), *_add_user_args(ns), "-Rights", "LockObjects", "-RestoreDeletedUser",
+        *_base_args(ns),
+        *_add_user_args(ns),
+        "-Rights",
+        "LockObjects",
+        "-RestoreDeletedUser",
     ]

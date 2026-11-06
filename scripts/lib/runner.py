@@ -41,7 +41,9 @@ class OneCCompletedProcess(subprocess.CompletedProcess[str]):
 
 def _check_platform(platform_path: Path) -> None:
     """Проверяет, что исполняемый файл платформы доступен."""
-    if not platform_path.is_file() or (sys.platform != "win32" and not os.access(platform_path, os.X_OK)):
+    if not platform_path.is_file() or (
+        sys.platform != "win32" and not os.access(platform_path, os.X_OK)
+    ):
         raise PlatformNotFound(f"Платформа 1С не найдена или не исполняема: {platform_path}")
 
 
@@ -173,7 +175,9 @@ def run_1c(args: list[str], ctx: RunContext) -> OneCCompletedProcess:
 
 
 def _run_1c(
-    args: list[str], ctx: RunContext, out_file: Path | None,
+    args: list[str],
+    ctx: RunContext,
+    out_file: Path | None,
 ) -> OneCCompletedProcess:
     command = build_command(args, ctx)
     logged_command = _mask_passwords(command)
@@ -203,7 +207,9 @@ def _run_1c(
     except OSError as error:
         raise OneCFailed(
             f"Не удалось запустить 1С: {error}",
-            returncode=-1, command=command, stderr=str(error),
+            returncode=-1,
+            command=command,
+            stderr=str(error),
         ) from error
 
     duration = time.monotonic() - started_at
@@ -235,7 +241,10 @@ def _verify_display(display: str) -> bool:
         return True
     try:
         result = subprocess.run(
-            [xdpyinfo, "-display", display], capture_output=True, timeout=5, check=False,
+            [xdpyinfo, "-display", display],
+            capture_output=True,
+            timeout=5,
+            check=False,
         )
         return result.returncode == 0
     except (subprocess.TimeoutExpired, OSError):
@@ -260,12 +269,16 @@ def run_1c_popen(args: list[str], ctx: RunContext) -> subprocess.Popen | None:
         return None
     try:
         process = subprocess.Popen(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
     except OSError as error:
         raise OneCFailed(
             f"Не удалось запустить 1С: {error}",
-            returncode=-1, command=command, stderr=str(error),
+            returncode=-1,
+            command=command,
+            stderr=str(error),
         ) from error
     logger.info("1С запущена в фоне, PID: %s", process.pid)
     return process

@@ -65,7 +65,10 @@ def test_ib_auth_args_empty_password():
 
 def test_ib_auth_args_user_and_password():
     assert DumpCfAction().ib_auth_args(_ns(ib_user="admin", ib_password="secret")) == [
-        "/N", "admin", "/P", "secret",
+        "/N",
+        "admin",
+        "/P",
+        "secret",
     ]
 
 
@@ -93,7 +96,7 @@ def test_command_args_insert_auth_after_ib(name, position, ctx):
     action.resolve_paths(ns)
     args = action.command_args(ns, ctx)
     index = args.index("/F")
-    assert args[index + 2:index + 6] == ["/N", "admin", "/P", "secret"]
+    assert args[index + 2 : index + 6] == ["/N", "admin", "/P", "secret"]
     assert args.count("/N") == 1
 
 
@@ -115,9 +118,19 @@ def test_resolve_from_environment(monkeypatch):
 def test_cli_overrides_environment(monkeypatch):
     monkeypatch.setenv("ONEC_OPS_IB_USER", "env-user")
     monkeypatch.setenv("ONEC_OPS_IB_PASSWORD", "env-secret")
-    ns = build_parser().parse_args([
-        "--ib", "/ib", "--ib-user", "cli-user", "--ib-password", "", "dump-cf", "--to", "base.cf",
-    ])
+    ns = build_parser().parse_args(
+        [
+            "--ib",
+            "/ib",
+            "--ib-user",
+            "cli-user",
+            "--ib-password",
+            "",
+            "dump-cf",
+            "--to",
+            "base.cf",
+        ]
+    )
     _resolve_ib_auth(ns, IB_ACTIONS["dump-cf"])
     assert (ns.ib_user, ns.ib_password) == ("cli-user", "")
     assert IB_ACTIONS["dump-cf"].ib_auth_args(ns) == ["/N", "cli-user"]
@@ -138,7 +151,9 @@ def test_resolve_environment_password_without_user(monkeypatch):
 
 @pytest.mark.parametrize("option", ["--ib-user", "--ib-password"])
 def test_create_ib_rejects_ib_auth(option, tmp_path):
-    ns = build_parser().parse_args(["create-ib", "--type", "file", "--path", str(tmp_path), option, "x"])
+    ns = build_parser().parse_args(
+        ["create-ib", "--type", "file", "--path", str(tmp_path), option, "x"]
+    )
     action = next(item for item in get_actions() if item.name == "create-ib")
     with pytest.raises(OneCOpsError, match="неприменимы к create-ib"):
         _resolve_ib_auth(ns, action)
@@ -164,9 +179,17 @@ def test_legacy_gui_options_still_work(name, caplog):
 
 @pytest.mark.parametrize("name", ["open-designer", "open-enterprise"])
 def test_legacy_and_new_same_value_allowed(name):
-    ns = build_parser().parse_args([
-        "--ib", "/ib", "--ib-user", "admin", name, "--user", "admin",
-    ])
+    ns = build_parser().parse_args(
+        [
+            "--ib",
+            "/ib",
+            "--ib-user",
+            "admin",
+            name,
+            "--user",
+            "admin",
+        ]
+    )
     _resolve_ib_auth(ns, IB_ACTIONS[name])
     assert ns.ib_user == "admin"
 
@@ -176,7 +199,11 @@ def test_legacy_and_new_same_value_allowed(name):
     ("new", "legacy", "message"),
     [
         (["--ib-user", "a"], ["--user", "b"], "--ib-user и --user"),
-        (["--ib-user", "a", "--ib-password", "x"], ["--password", "y"], "--ib-password и --password"),
+        (
+            ["--ib-user", "a", "--ib-password", "x"],
+            ["--password", "y"],
+            "--ib-password и --password",
+        ),
     ],
 )
 def test_legacy_and_new_conflict(name, new, legacy, message):
@@ -200,12 +227,23 @@ def test_cli_dump_cf_with_ib_user(dry_run, tmp_path, monkeypatch, mocker, caplog
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    run = mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    run = mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
     mocker.patch("scripts.onec_ops.check_environment")
     mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [
-        "--platform", str(platform), "--ib", "ib", "--ib-user", "Пользователь2",
-        "--ib-password", "secret", "dump-cf", "--to", "base.cf",
+        "--platform",
+        str(platform),
+        "--ib",
+        "ib",
+        "--ib-user",
+        "Пользователь2",
+        "--ib-password",
+        "secret",
+        "dump-cf",
+        "--to",
+        "base.cf",
     ]
     if dry_run:
         argv.insert(0, "--dry-run")
@@ -219,9 +257,11 @@ def test_cli_dump_cf_with_ib_user(dry_run, tmp_path, monkeypatch, mocker, caplog
     else:
         command = run.call_args.args[0]
         index = command.index("/F")
-        assert command[index + 1:index + 6] == [str(ib), "/N", "Пользователь2", "/P", "secret"]
+        assert command[index + 1 : index + 6] == [str(ib), "/N", "Пользователь2", "/P", "secret"]
 
 
 def test_cli_create_ib_with_ib_user_fails(tmp_path, caplog):
-    assert main(["create-ib", "--type", "file", "--path", str(tmp_path / "ib"), "--ib-user", "x"]) == 1
+    assert (
+        main(["create-ib", "--type", "file", "--path", str(tmp_path / "ib"), "--ib-user", "x"]) == 1
+    )
     assert "неприменимы к create-ib" in caplog.text

@@ -74,8 +74,21 @@ def test_cli_uses_config_platform(tmp_path, mocker, caplog):
     mocker.patch("scripts.onec_ops.check_environment")
     mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     with caplog.at_level("INFO"):
-        assert main(["--config", str(path), "--dry-run", "create-ib", "--type", "file",
-                     "--path", str(tmp_path / "ib")]) == 0
+        assert (
+            main(
+                [
+                    "--config",
+                    str(path),
+                    "--dry-run",
+                    "create-ib",
+                    "--type",
+                    "file",
+                    "--path",
+                    str(tmp_path / "ib"),
+                ]
+            )
+            == 0
+        )
     assert str(platform) in caplog.text
 
 
@@ -91,7 +104,11 @@ def test_cli_uses_config_platform(tmp_path, mocker, caplog):
     ],
 )
 def test_cli_invalid_config_returns_error_without_starting_platform(
-    tmp_path, mocker, caplog, source, message,
+    tmp_path,
+    mocker,
+    caplog,
+    source,
+    message,
 ):
     from scripts.onec_ops import main
 
@@ -101,8 +118,9 @@ def test_cli_invalid_config_returns_error_without_starting_platform(
     check = mocker.patch("scripts.onec_ops.check_environment")
     ib = tmp_path / "ib"
 
-    assert main(["--config", str(config_path), "create-ib", "--type", "file",
-                 "--path", str(ib)]) == 1
+    assert (
+        main(["--config", str(config_path), "create-ib", "--type", "file", "--path", str(ib)]) == 1
+    )
 
     assert str(config_path) in caplog.text
     assert message in caplog.text
@@ -116,8 +134,20 @@ def test_cli_config_path_is_directory_returns_error(tmp_path, mocker, caplog):
     from scripts.onec_ops import main
 
     run = mocker.patch("scripts.onec_ops.run_1c")
-    assert main(["--config", str(tmp_path), "create-ib", "--type", "file",
-                 "--path", str(tmp_path / "ib")]) == 1
+    assert (
+        main(
+            [
+                "--config",
+                str(tmp_path),
+                "create-ib",
+                "--type",
+                "file",
+                "--path",
+                str(tmp_path / "ib"),
+            ]
+        )
+        == 1
+    )
     assert "Не удалось загрузить конфигурационный файл" in caplog.text
     assert str(tmp_path) in caplog.text
     run.assert_not_called()

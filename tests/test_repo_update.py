@@ -31,8 +31,12 @@ def ctx(tmp_path):
 
 def _base_args(ns):
     return [
-        "DESIGNER", "/F", str(ns.ib), "/DisableStartupDialogs",
-        "/ConfigurationRepositoryUpdateCfg", "/ConfigurationRepositoryF",
+        "DESIGNER",
+        "/F",
+        str(ns.ib),
+        "/DisableStartupDialogs",
+        "/ConfigurationRepositoryUpdateCfg",
+        "/ConfigurationRepositoryF",
         str(Path(ns.storage).resolve()),
     ]
 
@@ -79,6 +83,9 @@ def test_build_1c_args_with_user_password(ns, ctx):
     ns.storage_user = "admin"
     ns.storage_password = "secret"
     assert RepoUpdateAction().build_1c_args(ns, ctx) == [
-        *_base_args(ns), "/ConfigurationRepositoryN", "admin",
-        "/ConfigurationRepositoryP", "secret",
+        *_base_args(ns),
+        "/ConfigurationRepositoryN",
+        "admin",
+        "/ConfigurationRepositoryP",
+        "secret",
     ]

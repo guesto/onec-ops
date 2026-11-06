@@ -40,5 +40,7 @@ def check_environment(ctx: RunContext) -> None:
     if sys.platform == "win32":
         return
     if not os.environ.get("DISPLAY") and not shutil.which("xvfb-run"):
-        raise XvfbNotAvailable("Нет DISPLAY и не найден xvfb-run. Установите xvfb или задайте DISPLAY.")
+        raise XvfbNotAvailable(
+            "Нет DISPLAY и не найден xvfb-run. Установите xvfb или задайте DISPLAY."
+        )
     _warn_missing_libraries(ctx)

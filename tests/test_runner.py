@@ -83,7 +83,9 @@ def test_timeout_becomes_onec_failed(tmp_path, monkeypatch, mocker):
 
 def test_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
     monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
 
     with caplog.at_level("INFO"):
         run_1c(
@@ -98,7 +100,9 @@ def test_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
 
 def test_repo_user_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
     monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
 
     with caplog.at_level("INFO"):
         run_1c(
@@ -164,11 +168,13 @@ def test_gui_command_dry_run_does_not_use_xvfb(tmp_path, monkeypatch, mocker):
 
 def _fake_run(returncode: int, out_text: str | None = None):
     """Имитирует 1С: пишет out_text в файл /Out (последний аргумент) в UTF-8 с BOM."""
+
     def run(command, **kwargs):
         if out_text is not None:
             out_path = Path(command[-1])
             out_path.write_bytes(out_text.encode("utf-8-sig"))
         return subprocess.CompletedProcess(command, returncode, "", "")
+
     return run
 
 
@@ -196,7 +202,9 @@ def test_out_file_added_and_removed(tmp_path, monkeypatch, mocker, mode):
 def test_out_file_not_added(tmp_path, monkeypatch, mocker, args, ctx_kwargs):
     monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
     platform = _platform(tmp_path)
-    run = mocker.patch("scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", ""))
+    run = mocker.patch(
+        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
 
     run_1c(args, RunContext(platform, **ctx_kwargs))
 
@@ -353,7 +361,14 @@ def _wait_pid_file(pid_file: Path) -> int:
 
 
 def test_execute_returns_output(tmp_path):
-    result = _execute([sys.executable, "-c", "import sys; print('out'); print('err', file=sys.stderr); sys.exit(3)"], timeout=10)
+    result = _execute(
+        [
+            sys.executable,
+            "-c",
+            "import sys; print('out'); print('err', file=sys.stderr); sys.exit(3)",
+        ],
+        timeout=10,
+    )
     assert (result.returncode, result.stdout.strip(), result.stderr.strip()) == (3, "out", "err")
 
 
