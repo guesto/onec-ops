@@ -121,7 +121,7 @@ def test_cli_uses_runner_with_absolute_paths(
     assert "***" in caplog.text
     if dry_run:
         subprocess_mock.assert_not_called()
-        assert str(storage) in caplog.text
+        assert repr(str(storage)) in caplog.text
         assert expected[4] in caplog.text
     else:
         subprocess_mock.assert_called_once()
