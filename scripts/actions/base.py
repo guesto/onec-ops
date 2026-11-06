@@ -8,7 +8,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from scripts.lib.exceptions import OneCOpsError
+from scripts.lib.exceptions import OneCFailed, OneCOpsError
 from scripts.lib.runner import RunContext
 
 logger = logging.getLogger(__name__)
@@ -95,3 +95,9 @@ class Action(ABC):
         self, ns: argparse.Namespace, ctx: RunContext, result: subprocess.CompletedProcess[str]
     ) -> None:
         """Выполняет пост-обработку результата."""
+
+    def on_failed(self, ns: argparse.Namespace, ctx: RunContext, error: OneCFailed) -> None:
+        """Может заменить ошибку 1С своей; если не заменил, ошибка идёт дальше."""
+
+    def cleanup(self, ns: argparse.Namespace) -> None:
+        """Освобождает ресурсы действия при успехе, ошибке и таймауте."""

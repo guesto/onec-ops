@@ -46,6 +46,8 @@ class CreateIbFileAction(Action):
         if ns.path is None:
             raise OneCOpsError("Для --type file обязательно укажите --path.")
         path = Path(ns.path)
+        if '"' in str(path.resolve()):
+            raise OneCOpsError(f"Путь --path не может содержать двойную кавычку: {path}")
         if path.exists() and not path.is_dir():
             raise OneCOpsError(f"--path должен указывать на каталог: {path}")
         database_file = path / "1Cv8.1CD"
@@ -78,7 +80,7 @@ class CreateIbFileAction(Action):
 
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
         """Собирает CREATEINFOBASE для файловой ИБ."""
-        return ["CREATEINFOBASE", f"File={Path(ns.path).resolve()}", "/DisableStartupMessages"]
+        return ["CREATEINFOBASE", f'File="{Path(ns.path).resolve()}"', "/DisableStartupMessages"]
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
         """Удаляет существующую ИБ и создаёт её каталог."""

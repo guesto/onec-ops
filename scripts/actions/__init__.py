@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .base import Action
 from .check_extension import CheckExtensionAction
+from .check_modules import CheckConfigAction, CheckModulesAction
 from .create_ib_file import CreateIbFileAction
 from .delete_extension import DeleteExtensionAction
 from .dump_cf import DumpCfAction
@@ -46,4 +47,6 @@ def get_actions() -> list[Action]:
         CheckExtensionAction(),
         DeleteExtensionAction(),
         UpdateDbAction(),
+        CheckModulesAction(),
+        CheckConfigAction(),
     ]

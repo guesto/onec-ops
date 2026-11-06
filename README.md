@@ -11,12 +11,13 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.8.3** (2026-10-24).
+**Текущая версия: v0.8.4** (2026-11-06).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
 - `create-ib --type file` — создание файловой ИБ.
-- `dump-config` / `load-config` — выгрузка и загрузка конфигурации в XML.
+- `dump-config` / `load-config` — выгрузка и загрузка конфигурации в XML, в том числе частичная.
+- `check-modules` / `check-config` — проверка модулей и конфигурации.
 - `dump-cf` / `load-cf` — конфигурация `.cf` и расширения `.cfe` с `--extension`.
 - `open-designer` / `open-enterprise` — открыть Конфигуратор или клиент 1С.
 - `dump-epf` / `load-epf` — разборка и сборка внешних обработок `.epf` и отчётов `.erf` в XML.
@@ -112,6 +113,22 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 Dry-run требует существующей ИБ и корректного каталога загрузки,
 показывает команду с абсолютными путями и пропускает запуск 1С.
 Подробнее: [справочник команд](references/commands.md).
+
+### Частичная выгрузка и загрузка
+
+    onec-ops dump-config --ib /path/to/ib --to /path/to/xml --object Catalog.Клиенты
+    onec-ops load-config --ib /path/to/ib --from /path/to/xml --file Catalogs/Клиенты/Ext/ObjectModule.bsl
+
+Объекты и файлы также задаются списком `--list-file`. Частичная загрузка не
+обновляет `ConfigDumpInfo.xml`.
+
+### Проверка модулей и конфигурации
+
+    onec-ops check-modules --ib /path/to/ib
+    onec-ops check-config --ib /path/to/ib --extension Имя
+
+По умолчанию проверяются все пять режимов, `--mode` сужает набор. Замечания дают
+код 1 и строку «Найдены замечания 1С:».
 
 ### Обновление конфигурации БД
 

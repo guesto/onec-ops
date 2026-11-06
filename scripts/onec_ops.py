@@ -14,7 +14,7 @@ if __package__ in (None, ""):
 from scripts.actions import get_actions
 from scripts.actions.base import Action
 from scripts.lib.config import load_config, resolve_platform
-from scripts.lib.exceptions import OneCOpsError
+from scripts.lib.exceptions import OneCFailed, OneCOpsError
 from scripts.lib.logging_setup import setup_logging
 from scripts.lib.platform_check import check_environment
 from scripts.lib.runner import RunContext, run_1c
@@ -107,10 +107,17 @@ def main(argv: list[str] | None = None) -> int:
         action.validate(ns)
         if action.requires_gui and not ctx.dry_run:
             check_environment(ctx)
-        action.pre_run(ns, ctx)
-        if not action.requires_gui:
-            result = run_1c(action.command_args(ns, ctx), ctx)
-            action.post_run(ns, ctx, result)
+        try:
+            action.pre_run(ns, ctx)
+            if not action.requires_gui:
+                try:
+                    result = run_1c(action.command_args(ns, ctx), ctx)
+                except OneCFailed as error:
+                    action.on_failed(ns, ctx, error)
+                    raise
+                action.post_run(ns, ctx, result)
+        finally:
+            action.cleanup(ns)
         return 0
     except OneCOpsError as error:
         logger.error("%s", error)
