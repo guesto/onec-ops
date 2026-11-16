@@ -11,7 +11,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.9.0** (2026-11-06).
+**Текущая версия: v0.9.1** (2026-11-16).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -52,7 +52,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
     pipx install --force git+https://github.com/guesto/onec-ops.git
 
-Публикация в PyPI (`pipx install onec-ops`) запланирована в v0.9.0.
+Публикация в PyPI (`pipx install onec-ops`) запланирована в v0.9.2.
 
 ### Для разработки
 

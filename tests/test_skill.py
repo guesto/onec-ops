@@ -24,7 +24,19 @@ def _frontmatter() -> dict[str, str]:
     fields = {}
     for line in match.group(1).splitlines():
         key, _, value = line.partition(":")
-        fields[key.strip()] = value.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] == '"':
+            value = value[1:-1]
+            assert '"' not in value and "\\" not in value, (
+                f"{key}: кавычки и обратная косая черта внутри значения ломают YAML"
+            )
+        else:
+            # Без кавычек YAML примет «: » за новый ключ, а « #» — за комментарий
+            # (quick_validate.py: mapping values are not allowed here).
+            assert ": " not in value and " #" not in value, (
+                f"{key}: значение с «: » или « #» нужно взять в двойные кавычки"
+            )
+        fields[key.strip()] = value
     return fields
 
 
