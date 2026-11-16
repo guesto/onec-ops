@@ -7,6 +7,14 @@
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-11-16
+
+### Fixed
+
+- `description` в `SKILL.md` взят в кавычки: «: » в описании больше не ломает
+  разбор YAML (`quick_validate.py`: `mapping values are not allowed here`).
+- Тест навыка проверяет, что значения frontmatter с «: » или « #» взяты в кавычки.
+
 ## [0.9.0] — 2026-11-06
 
 ### Added
