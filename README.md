@@ -7,11 +7,11 @@
 
 CLI-утилита и Agent Skill для автоматизации пакетных операций 
 1С:Предприятие. Работает как для человека в терминале, так и для 
-ИИ-агентов (Codex, Claude Code).
+ИИ-агентов (Codex, Claude Code, Kimi Code).
 
 ## Статус
 
-**Текущая версия: v0.9.1** (2026-11-16).
+**Текущая версия: v0.9.2** (2026-11-16).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -52,7 +52,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
     pipx install --force git+https://github.com/guesto/onec-ops.git
 
-Публикация в PyPI (`pipx install onec-ops`) запланирована в v0.9.2.
+Публикация в PyPI (`pipx install onec-ops`) запланирована в v0.9.3.
 
 ### Для разработки
 
@@ -332,8 +332,8 @@ Dry-run проверяет ИБ и пути, показывает команду
 
 ## Agent Skill
 
-Навык учит агента (Claude Code, Codex) пользоваться `onec-ops`: какую
-команду выбрать, какие команды разрушают данные, как читать ошибки 1С.
+Навык учит агента (Claude Code, Codex, Kimi Code) пользоваться `onec-ops`:
+какую команду выбрать, какие команды разрушают данные, как читать ошибки 1С.
 Утилиту `onec-ops` устанавливайте отдельно (см. «Установка»).
 
 Пакет навыка — три пути, которые устанавливаются вместе:
@@ -371,19 +371,39 @@ Codex не следует симлинкам — нужна копия:
 
 Перезапустите Codex.
 
+### Kimi Code
+
+Kimi Code берёт навыки из `~/.kimi-code/skills/` (каталог переезжает
+вместе с `KIMI_CODE_HOME`) и общего для разных агентов `~/.agents/skills/`:
+
+    mkdir -p ~/.kimi-code/skills/onec-ops
+    cp -r SKILL.md references agents ~/.kimi-code/skills/onec-ops/
+
+Для одного проекта копируйте в `.kimi-code/skills/onec-ops/` в корне
+проекта: навыки проекта важнее пользовательских. Kimi Code требует в
+frontmatter `name` и `description`, в onec-ops оба поля есть. Работа
+через симлинки не проверялась — ставьте копию. Изменения в каталогах
+навыков подхватываются командой `/reload`, без перезапуска.
+
 ### Обновление копий
 
-Копии в `~/.claude/skills/` и `~/.codex/skills/` не обновляются сами.
-После каждого релиза повторите `cp -r` из актуального репозитория.
-Проверить, что копия актуальна:
+Копии в `~/.claude/skills/`, `~/.codex/skills/`, `~/.kimi-code/skills/`
+и `~/.agents/skills/` не обновляются сами. После каждого релиза повторите
+`cp -r` из актуального репозитория. Проверить все установленные копии:
 
-    diff -r SKILL.md ~/.codex/skills/onec-ops/SKILL.md && \
-    diff -r references ~/.codex/skills/onec-ops/references && echo "актуально"
+    for dir in ~/.claude ~/.codex ~/.kimi-code ~/.agents; do
+      skill="$dir/skills/onec-ops"
+      [ -d "$skill" ] || continue
+      diff -rq SKILL.md "$skill/SKILL.md" >/dev/null 2>&1 && \
+      diff -rq references "$skill/references" >/dev/null 2>&1 && \
+      echo "актуально: $skill" || echo "устарело: $skill"
+    done
 
 ### Проверка
 
 В новом чате агента спросите «какие навыки ты видишь?» — в списке
-должен быть `onec-ops`. Затем дайте задачу, например «выгрузи
+должен быть `onec-ops`. В Kimi Code навык также вызывается напрямую
+командой `/skill:onec-ops`. Затем дайте задачу, например «выгрузи
 конфигурацию базы ./base в .cf»: агент должен выбрать навык и предложить
 `onec-ops --ib ./base dump-cf --to ./base.cf`.
 
