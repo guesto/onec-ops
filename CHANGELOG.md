@@ -264,7 +264,10 @@
   Решение: `sandbox_mode = "danger-full-access"` в `~/.codex/config.toml`.
 - `create-ib --type server` — заглушка (v0.1.1 отложен).
 
-[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/guesto/onec-ops/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/guesto/onec-ops/compare/v0.9.0...v0.9.1
+[0.9.0]: https://github.com/guesto/onec-ops/compare/v0.8.4...v0.9.0
+[0.8.4]: https://github.com/guesto/onec-ops/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/guesto/onec-ops/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/guesto/onec-ops/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/guesto/onec-ops/compare/v0.7.0...v0.8.1
