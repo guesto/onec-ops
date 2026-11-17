@@ -11,7 +11,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.9.2** (2026-11-16).
+**Текущая версия: v0.9.3** (2026-11-17).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -25,6 +25,8 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `repo-create` / `repo-bind` / `repo-update` / `repo-add-user` — файловое хранилище конфигурации.
 - `list-extensions` / `check-extension` / `delete-extension` — список, проверка и удаление расширений.
 - `update-db` — применение загруженной конфигурации к базе данных.
+- `install-skill` — установка и проверка Agent Skill у агентов.
+- Пакет в PyPI: `pipx install onec-ops`.
 
 См. [roadmap.md](roadmap.md) для плана релизов.
 
@@ -46,13 +48,19 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ### Для использования
 
-    pipx install git+https://github.com/guesto/onec-ops.git
+    pipx install onec-ops
 
-Обновление до последней версии из `main`:
+Обновление:
+
+    pipx upgrade onec-ops
+
+Версия из `main`, ещё не выпущенная в PyPI:
 
     pipx install --force git+https://github.com/guesto/onec-ops.git
 
-Публикация в PyPI (`pipx install onec-ops`) запланирована в v0.9.3.
+После установки или обновления поставьте навык агентам (см. «Agent Skill»):
+
+    onec-ops install-skill
 
 ### Для разработки
 
@@ -334,7 +342,7 @@ Dry-run проверяет ИБ и пути, показывает команду
 
 Навык учит агента (Claude Code, Codex, Kimi Code) пользоваться `onec-ops`:
 какую команду выбрать, какие команды разрушают данные, как читать ошибки 1С.
-Утилиту `onec-ops` устанавливайте отдельно (см. «Установка»).
+Навык входит в пакет `onec-ops` и ставится командой `install-skill`.
 
 Пакет навыка — три пути, которые устанавливаются вместе:
 
@@ -357,17 +365,37 @@ Dry-run проверяет ИБ и пути, показывает команду
 Ссылки на `references/` и `agents/` обязательны: без них агент видит
 `SKILL.md`, но не открывает справочники. Навык обновляется вместе с `git pull`.
 
+### Установка командой install-skill
+
+    onec-ops install-skill
+
+Команда копирует навык из установленного пакета каждому агенту, чей каталог
+уже есть: `~/.claude/skills/onec-ops`, `~/.codex/skills/onec-ops`,
+`~/.kimi-code/skills/onec-ops`, `~/.agents/skills/onec-ops`. Каталоги берутся
+из `CLAUDE_CONFIG_DIR`, `CODEX_HOME` и `KIMI_CODE_HOME`, если они заданы.
+Выбрать агентов явно, поставить в проект или в свой каталог:
+
+    onec-ops install-skill --agent claude --agent codex
+    onec-ops install-skill --project . --agent claude
+    onec-ops install-skill --target ~/my-skills/onec-ops
+
+Полный справочник — [references/commands.md](references/commands.md#install-skill).
+Ниже — особенности агентов и ручная установка из клона репозитория.
+
 ### Claude Code — для всех проектов
+
+    onec-ops install-skill --agent claude
+
+Вручную из репозитория:
 
     mkdir -p ~/.claude/skills/onec-ops
     cp -r SKILL.md references agents ~/.claude/skills/onec-ops/
 
 ### Codex
 
-Codex не следует симлинкам — нужна копия:
+Codex не следует симлинкам — нужна копия, её и делает `install-skill`:
 
-    mkdir -p ~/.codex/skills/onec-ops
-    cp -r SKILL.md references agents ~/.codex/skills/onec-ops/
+    onec-ops install-skill --agent codex
 
 Перезапустите Codex.
 
@@ -376,28 +404,26 @@ Codex не следует симлинкам — нужна копия:
 Kimi Code берёт навыки из `~/.kimi-code/skills/` (каталог переезжает
 вместе с `KIMI_CODE_HOME`) и общего для разных агентов `~/.agents/skills/`:
 
-    mkdir -p ~/.kimi-code/skills/onec-ops
-    cp -r SKILL.md references agents ~/.kimi-code/skills/onec-ops/
+    onec-ops install-skill --agent kimi
 
-Для одного проекта копируйте в `.kimi-code/skills/onec-ops/` в корне
-проекта: навыки проекта важнее пользовательских. Kimi Code требует в
+Для одного проекта — `onec-ops install-skill --project . --agent kimi`, копия
+ляжет в `.kimi-code/skills/onec-ops/`: навыки проекта важнее пользовательских. Kimi Code требует в
 frontmatter `name` и `description`, в onec-ops оба поля есть. Работа
 через симлинки не проверялась — ставьте копию. Изменения в каталогах
 навыков подхватываются командой `/reload`, без перезапуска.
 
 ### Обновление копий
 
-Копии в `~/.claude/skills/`, `~/.codex/skills/`, `~/.kimi-code/skills/`
-и `~/.agents/skills/` не обновляются сами. После каждого релиза повторите
-`cp -r` из актуального репозитория. Проверить все установленные копии:
+Копии не обновляются сами. После `pipx upgrade onec-ops` повторите:
 
-    for dir in ~/.claude ~/.codex ~/.kimi-code ~/.agents; do
-      skill="$dir/skills/onec-ops"
-      [ -d "$skill" ] || continue
-      diff -rq SKILL.md "$skill/SKILL.md" >/dev/null 2>&1 && \
-      diff -rq references "$skill/references" >/dev/null 2>&1 && \
-      echo "актуально: $skill" || echo "устарело: $skill"
-    done
+    onec-ops install-skill
+
+Проверить установленные копии, ничего не меняя (код 1, если есть устаревшие):
+
+    onec-ops install-skill --check
+
+Копию из симлинков на репозиторий (Claude Code в проекте onec-ops) команда
+пропускает: она обновляется через `git pull`.
 
 ### Проверка
 
@@ -436,8 +462,8 @@ frontmatter `name` и `description`, в onec-ops оба поля есть. Ра�
 ## Разработка
 
     pytest -v                          # тесты и покрытие, порог 90%
-    ruff check scripts tests           # линтер
-    ruff format --check scripts tests  # форматирование
+    ruff check onec_ops tests           # линтер
+    ruff format --check onec_ops tests  # форматирование
 
 Все unit-тесты мокают `subprocess.run` — реальные запуски 1С 
 в тестах отсутствуют. CI запускает их на Linux и Windows, поэтому поведение

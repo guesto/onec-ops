@@ -44,7 +44,7 @@ CLI `onec-ops` запускает толстый клиент `1cv8` в паке
 
 ## Команды
 
-У всех команд, кроме `create-ib`, обязателен `--ib PATH`.
+У всех команд, кроме `create-ib` и `install-skill`, обязателен `--ib PATH`.
 
 | Задача | Команда |
 | --- | --- |
@@ -203,3 +203,6 @@ CLI `onec-ops` запускает толстый клиент `1cv8` в паке
 - [references/commands.md](references/commands.md) — синтаксис, параметры, поведение каждой команды.
 - [references/workflows.md](references/workflows.md) — типовые сценарии.
 - [references/troubleshooting.md](references/troubleshooting.md) — ошибки и диагностика.
+
+Если CLI знает команду, которой нет в этом навыке, копия навыка устарела:
+предложи пользователю `onec-ops install-skill` (обновляет копии у найденных агентов).
