@@ -388,10 +388,13 @@ v0.4.0, v0.5.0, v0.5.1, v0.5.2, v0.5.3, v0.6.0, v0.7.0, v0.8.0, v0.8.1, v0.8.2, 
 
 **Приоритет:** высокий перед v1.0.
 
-- Переименование пакета `scripts` в `onec_ops`.
-- Навык внутри пакета и команда `onec-ops install-skill`.
-- Данные автора в `pyproject.toml`.
+- Переименование пакета `scripts` в `onec_ops`, запуск `python -m onec_ops`, `--version`.
+- Навык внутри пакета и команда `onec-ops install-skill` (с `--check`).
+- Данные автора и ссылки в `pyproject.toml`, сборка через hatchling.
 - Публикация в PyPI по тегу через Trusted Publishing (`pipx install onec-ops`).
+- Проверка wheel в CI: состав, установка в чистое окружение, `install-skill`.
+
+**ТЗ:** [docs/v0.9.3.md](docs/v0.9.3.md).
 
 ### v1.0.0 — Стабильный релиз [ПЛАНИРУЕТСЯ]
 
