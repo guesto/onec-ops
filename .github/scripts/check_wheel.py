@@ -15,6 +15,8 @@ FORBIDDEN_PREFIXES = ("scripts/", "tests/", "inputs/", "outputs/", "docs/")
 
 
 def main(path: str) -> int:
+    # На Windows вывод в канал идёт в cp1252, кириллица в нём роняет print.
+    sys.stdout.reconfigure(encoding="utf-8")
     names = zipfile.ZipFile(path).namelist()
     errors = [f"нет файла {name}" for name in REQUIRED if name not in names]
     errors += [f"лишний файл {name}" for name in names if name.startswith(FORBIDDEN_PREFIXES)]
