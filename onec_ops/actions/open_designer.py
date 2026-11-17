@@ -1,4 +1,4 @@
-"""GUI-действие open-enterprise."""
+"""GUI-действие open-designer."""
 
 from __future__ import annotations
 
@@ -6,10 +6,9 @@ import argparse
 import logging
 import os
 import sys
-from pathlib import Path
 
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import (
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import (
     RunContext,
     _detect_codex_sandbox,
     _verify_display,
@@ -22,23 +21,20 @@ from .base import Action
 logger = logging.getLogger(__name__)
 
 
-class OpenEnterpriseAction(Action):
-    """Открывает клиент 1С:Предприятие."""
+class OpenDesignerAction(Action):
+    """Открывает интерактивный Конфигуратор 1С."""
 
-    name = "open-enterprise"
-    help = "Открыть клиент 1С"
-    description = "Открывает клиент 1С:Предприятие."
+    name = "open-designer"
+    help = "Открыть Конфигуратор"
+    description = "Открывает интерактивный Конфигуратор 1С."
     requires_ib = True
     requires_gui = True
     legacy_ib_auth_options = True
-    path_args = ("execute",)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        """Добавляет параметры open-enterprise."""
+        """Добавляет параметры open-designer."""
         parser.add_argument("--user", help="Устарело: используйте --ib-user")
         parser.add_argument("--password", help="Устарело: используйте --ib-password")
-        parser.add_argument("--execute", type=Path, help="Путь к обработке .epf")
-        parser.add_argument("--c", help="Параметр запуска 1С")
         parser.add_argument("--no-wait", action="store_true", help="Не ждать закрытия окна")
 
     def validate(self, ns: argparse.Namespace) -> None:
@@ -62,11 +58,7 @@ class OpenEnterpriseAction(Action):
 
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
         """Собирает интерактивную команду 1С."""
-        args = ["ENTERPRISE", "/F", str(ns.ib)]
-        if ns.execute:
-            args += ["/Execute", str(Path(ns.execute).resolve())]
-        if ns.c:
-            args += ["/C", ns.c]
+        args = ["DESIGNER", "/F", str(ns.ib)]
         return args
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:

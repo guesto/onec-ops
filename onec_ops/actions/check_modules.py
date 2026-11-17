@@ -6,8 +6,8 @@ import argparse
 import logging
 import subprocess
 
-from scripts.lib.exceptions import OneCFailed, OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.lib.exceptions import OneCFailed, OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 from .base import Action
 from .extension_target import (

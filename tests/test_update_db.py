@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.update_db import UpdateDbAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import build_parser, main
+from onec_ops.actions.update_db import UpdateDbAction
+from onec_ops.cli import build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 def _fake_run(returncode: int, out_text: str):
@@ -36,8 +36,8 @@ def cli(tmp_path, ib, mocker):
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
 
     def run(*argv):
         return main(["--platform", str(platform), "--ib", str(ib), *argv])
@@ -97,7 +97,7 @@ def test_validate_errors(argv, message, ib):
 
 def test_cli_changes(cli, mocker, caplog):
     out = "Новый объект: Справочник.Номенклатура\r\nОбновление конфигурации успешно завершено"
-    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, out))
+    run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, out))
     with caplog.at_level("INFO"):
         assert cli("update-db") == 0
     assert "/UpdateDBCfg" in run.call_args.args[0]
@@ -106,7 +106,7 @@ def test_cli_changes(cli, mocker, caplog):
 
 
 def test_cli_no_changes(cli, mocker, caplog):
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
     with caplog.at_level("INFO"):
         assert cli("update-db") == 0
     assert "Изменений нет" in caplog.text
@@ -114,7 +114,7 @@ def test_cli_no_changes(cli, mocker, caplog):
 
 def test_cli_failure_shows_1c_text(cli, mocker, caplog):
     mocker.patch(
-        "scripts.lib.runner._execute", side_effect=_fake_run(1, "Ошибка обновления структуры")
+        "onec_ops.lib.runner._execute", side_effect=_fake_run(1, "Ошибка обновления структуры")
     )
     assert cli("update-db", "--warnings-as-errors") == 1
     assert "Ошибка обновления структуры" in caplog.text
@@ -122,7 +122,7 @@ def test_cli_failure_shows_1c_text(cli, mocker, caplog):
 
 
 def test_cli_dry_run(cli, mocker, caplog):
-    run = mocker.patch("scripts.lib.runner._execute")
+    run = mocker.patch("onec_ops.lib.runner._execute")
     with caplog.at_level("INFO"):
         assert cli("--dry-run", "update-db", "--dynamic") == 0
     run.assert_not_called()

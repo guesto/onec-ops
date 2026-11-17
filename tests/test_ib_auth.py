@@ -7,11 +7,11 @@ import subprocess
 
 import pytest
 
-from scripts.actions import get_actions
-from scripts.actions.dump_cf import DumpCfAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import _resolve_ib_auth, build_parser, main
+from onec_ops.actions import get_actions
+from onec_ops.actions.dump_cf import DumpCfAction
+from onec_ops.cli import _resolve_ib_auth, build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 IB_ACTIONS = {action.name: action for action in get_actions() if action.requires_ib}
 ACTION_ARGS = {
@@ -228,10 +228,10 @@ def test_cli_dump_cf_with_ib_user(dry_run, tmp_path, monkeypatch, mocker, caplog
     platform.touch()
     platform.chmod(0o755)
     run = mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [
         "--platform",
         str(platform),

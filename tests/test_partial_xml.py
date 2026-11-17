@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.onec_ops import main
+from onec_ops.cli import main
 
 MODULE = "Catalogs/Клиенты/Ext/ObjectModule.bsl"
 
@@ -46,7 +46,7 @@ def captured(mocker):
             raise state["exception"]
         return subprocess.CompletedProcess(command, state["returncode"], "", "")
 
-    mocker.patch("scripts.lib.runner._execute", side_effect=run)
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=run)
     return state
 
 
@@ -55,8 +55,8 @@ def cli(tmp_path, ib, mocker):
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
 
     def run(*argv):
         return main(["--platform", str(platform), "--ib", str(ib), *argv])
@@ -250,8 +250,8 @@ def test_temp_list_removed_on_dry_run(cli, source, mocker):
         created.append(Path(name))
         return fd, name
 
-    mocker.patch("scripts.actions.partial_list.tempfile.mkstemp", side_effect=spy)
-    run = mocker.patch("scripts.lib.runner._execute")
+    mocker.patch("onec_ops.actions.partial_list.tempfile.mkstemp", side_effect=spy)
+    run = mocker.patch("onec_ops.lib.runner._execute")
 
     assert cli("--dry-run", "load-config", "--from", str(source), "--file", MODULE) == 0
     run.assert_not_called()

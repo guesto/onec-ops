@@ -44,3 +44,7 @@ outputs/*
 
 # Локальные настройки Codex
 .codex/
+
+# Сборка пакета
+dist/
+build/

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.create_ib_file import CreateIbFileAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.actions.create_ib_file import CreateIbFileAction
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 def _namespace(
@@ -49,7 +49,7 @@ def test_force_with_yes_removes_and_proceeds(tmp_path, mocker):
     (tmp_path / "1Cv8.1CD").touch()
     action = CreateIbFileAction()
     namespace = _namespace(tmp_path, force=True, yes=True)
-    remove_mock = mocker.patch("scripts.actions.create_ib_file.shutil.rmtree")
+    remove_mock = mocker.patch("onec_ops.actions.create_ib_file.shutil.rmtree")
 
     action.validate(namespace)
     action.pre_run(namespace, RunContext(tmp_path / "1cv8"))
@@ -61,7 +61,7 @@ def test_force_without_yes_in_non_tty_raises(tmp_path, monkeypatch, mocker):
     (tmp_path / "1Cv8.1CD").touch()
     stdin = mocker.Mock()
     stdin.isatty.return_value = False
-    monkeypatch.setattr("scripts.actions.create_ib_file.sys.stdin", stdin)
+    monkeypatch.setattr("onec_ops.actions.create_ib_file.sys.stdin", stdin)
 
     with pytest.raises(OneCOpsError, match="--force --yes"):
         CreateIbFileAction().validate(_namespace(tmp_path, force=True))
@@ -72,7 +72,7 @@ def test_force_with_confirmation_yes_proceeds(tmp_path, monkeypatch, mocker):
     stdin = mocker.Mock()
     stdin.isatty.return_value = True
     stdin.readline.return_value = "Y\n"
-    monkeypatch.setattr("scripts.actions.create_ib_file.sys.stdin", stdin)
+    monkeypatch.setattr("onec_ops.actions.create_ib_file.sys.stdin", stdin)
 
     CreateIbFileAction().validate(_namespace(tmp_path, force=True))
 
@@ -82,7 +82,7 @@ def test_force_with_confirmation_no_cancels(tmp_path, monkeypatch, mocker):
     stdin = mocker.Mock()
     stdin.isatty.return_value = True
     stdin.readline.return_value = "n\n"
-    monkeypatch.setattr("scripts.actions.create_ib_file.sys.stdin", stdin)
+    monkeypatch.setattr("onec_ops.actions.create_ib_file.sys.stdin", stdin)
 
     with pytest.raises(OneCOpsError, match="Отменено"):
         CreateIbFileAction().validate(_namespace(tmp_path, force=True))
@@ -120,7 +120,7 @@ def test_validate_rejects_double_quote_before_creating_directory(tmp_path):
 
 def test_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
     (tmp_path / "1Cv8.1CD").write_text("data")
-    remove_mock = mocker.patch("scripts.actions.create_ib_file.shutil.rmtree")
+    remove_mock = mocker.patch("onec_ops.actions.create_ib_file.shutil.rmtree")
     namespace = _namespace(tmp_path, force=True, yes=True)
 
     CreateIbFileAction().pre_run(namespace, RunContext(tmp_path / "1cv8", dry_run=True))
@@ -130,7 +130,7 @@ def test_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
 
 
 def test_cli_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
-    from scripts.onec_ops import main
+    from onec_ops.cli import main
 
     ib = tmp_path / "ib"
     ib.mkdir()
@@ -138,9 +138,9 @@ def test_cli_dry_run_with_force_keeps_existing_database(tmp_path, mocker):
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
-    run = mocker.patch("scripts.lib.runner._execute")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    run = mocker.patch("onec_ops.lib.runner._execute")
 
     argv = ["--platform", str(platform), "--dry-run", "create-ib", "--type", "file"]
     assert main([*argv, "--path", str(ib), "--force", "--yes"]) == 0

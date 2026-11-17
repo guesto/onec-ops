@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from scripts.lib.exceptions import OneCOpsError
+from onec_ops.lib.exceptions import OneCOpsError
 
 
 def add_extension_target(parser: argparse.ArgumentParser) -> None:

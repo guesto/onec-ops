@@ -14,6 +14,7 @@
 - Обработки и отчёты: [dump-epf](#dump-epf) · [load-epf](#load-epf)
 - Хранилище: [repo-create](#repo-create) · [repo-bind](#repo-bind) · [repo-update](#repo-update) · [repo-add-user](#repo-add-user)
 - GUI: [open-designer](#open-designer) · [open-enterprise](#open-enterprise)
+- Навык: [install-skill](#install-skill)
 
 ## Общие параметры
 
@@ -976,4 +977,50 @@ onec-ops check-config --ib PATH [--mode MODE ...] [--extended]
 ```sh
 onec-ops check-config --ib ./base1c
 onec-ops check-config --ib ./base1c --extension onec
+```
+
+## install-skill
+
+Копирует навык (`SKILL.md`, `references/`, `agents/`) из установленного пакета
+в каталоги агентов. 1С не запускает, `--ib` не нужен.
+
+### Синтаксис
+
+```sh
+onec-ops install-skill [--agent AGENT ...] [--project DIR | --target DIR]
+                       [--check] [--dry-run]
+```
+
+### Параметры
+
+```text
+--agent AGENT   claude, codex, kimi или agents (~/.agents). Можно повторять
+--project DIR   Установить в проект: DIR/.claude/skills/onec-ops и т. п.
+--target DIR    Явный каталог навыка
+--check         Только проверить копии, ничего не менять
+--dry-run       Показать, куда будет установлено
+```
+
+### Поведение
+
+1. Без `--agent` выбирает агентов, чьи каталоги уже есть: `~/.claude`,
+   `~/.codex`, `~/.kimi-code`, `~/.agents`. С `--project` — те же каталоги в
+   проекте. Не нашлось ни одного — ошибка с подсказкой про `--agent`.
+2. Домашние каталоги берутся из `CLAUDE_CONFIG_DIR`, `CODEX_HOME`,
+   `KIMI_CODE_HOME`, если они заданы.
+3. Заменяет только `SKILL.md`, `references/` и `agents/`; другие файлы в
+   каталоге навыка остаются. Актуальную копию не трогает.
+4. Отказывается писать в каталог с другим навыком или в непустой каталог без
+   `SKILL.md`. Копию из симлинков на репозиторий пропускает: она обновляется
+   через `git pull`.
+5. `--check` печатает «актуально», «устарело», «не установлен» или «ссылки на
+   репозиторий» для каждого каталога. Код возврата 1, если есть устаревшие или
+   неустановленные копии.
+6. После обновления перезапустите Codex; в Kimi Code — `/reload`.
+
+```sh
+onec-ops install-skill
+onec-ops install-skill --agent claude --agent codex
+onec-ops install-skill --project . --agent claude
+onec-ops install-skill --check
 ```

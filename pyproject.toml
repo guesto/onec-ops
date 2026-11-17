@@ -1,11 +1,11 @@
 [project]
 name = "onec-ops"
-version = "0.9.2"
+version = "0.9.3"
 description = "CLI-утилита и Agent Skill для пакетных операций 1С:Предприятие"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+authors = [{ name = "Guesto", email = "guesto@guesto.ru" }]
 keywords = ["1c", "onec", "cli", "automation", "agent-skill"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -17,11 +17,18 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Natural Language :: Russian",
+    "Topic :: Software Development :: Build Tools",
 ]
 
 dependencies = [
     "platformdirs>=4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/guesto/onec-ops"
+Changelog = "https://github.com/guesto/onec-ops/blob/main/CHANGELOG.md"
+Issues = "https://github.com/guesto/onec-ops/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -30,23 +37,42 @@ dev = [
     "pytest-mock>=3.12",
     "ruff==0.16.10",
     "pre-commit>=3.0",
+    "build>=1.2",
+    "twine>=6.1",
 ]
 
 [project.scripts]
-onec-ops = "scripts.onec_ops:main"
+onec-ops = "onec_ops.cli:main"
 
 [build-system]
-requires = ["setuptools>=77", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["scripts*"]
-exclude = ["inputs*", "outputs*", "references*", "assets*", "agents*", "tests*"]
+[tool.hatch.build.targets.wheel]
+packages = ["onec_ops"]
+
+# Навык лежит в корне репозитория, в wheel он попадает внутрь пакета
+# для команды install-skill.
+[tool.hatch.build.targets.wheel.force-include]
+"SKILL.md" = "onec_ops/skill/SKILL.md"
+"references" = "onec_ops/skill/references"
+"agents" = "onec_ops/skill/agents"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "onec_ops",
+    "tests",
+    "SKILL.md",
+    "references",
+    "agents",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --cov=scripts --cov-report=term-missing"
+addopts = "-v --cov=onec_ops --cov-report=term-missing"
 
 [tool.coverage.report]
 fail_under = 90

@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from scripts.onec_ops import build_parser
+from onec_ops.cli import build_parser
 
 
 def test_root_help_exits_successfully():
@@ -28,7 +28,7 @@ def test_create_ib_help_exits_successfully():
 def test_help_survives_output_encoding_without_cyrillic():
     environment = {**os.environ, "PYTHONIOENCODING": "cp1252"}
     result = subprocess.run(
-        [sys.executable, "-m", "scripts.onec_ops", "--help"],
+        [sys.executable, "-m", "onec_ops", "--help"],
         capture_output=True,
         env=environment,
         check=False,

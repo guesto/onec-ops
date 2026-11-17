@@ -8,17 +8,17 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.load_epf import LoadEpfAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import main
+from onec_ops.actions.load_epf import LoadEpfAction
+from onec_ops.cli import main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     mocker.patch("subprocess.Popen")
     return mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
 
@@ -90,7 +90,7 @@ def test_validate_destination_is_directory(ns):
 
 
 def test_validate_output_not_writable(ns, mocker):
-    mocker.patch("scripts.actions.load_epf.os.access", return_value=False)
+    mocker.patch("onec_ops.actions.load_epf.os.access", return_value=False)
     with pytest.raises(OneCOpsError, match="недоступен для записи"):
         LoadEpfAction().validate(ns)
 
@@ -129,15 +129,15 @@ def test_pre_run_creates_parent_directory(ns, ctx):
 
 
 def test_pre_run_directory_error(ns, ctx, mocker):
-    mocker.patch("scripts.actions.load_epf.Path.mkdir", side_effect=PermissionError("denied"))
+    mocker.patch("onec_ops.actions.load_epf.Path.mkdir", side_effect=PermissionError("denied"))
     with pytest.raises(OneCOpsError, match="Не удалось"):
         LoadEpfAction().pre_run(ns, ctx)
 
 
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_cli_runs_with_mocked_subprocess(ns, ctx, subprocess_mock, mocker, caplog, dry_run):
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [
         "--platform",
         str(ctx.platform_path),

@@ -6,9 +6,9 @@ import subprocess
 
 import pytest
 
-from scripts.actions import get_actions
-from scripts.lib.exceptions import OneCOpsError
-from scripts.onec_ops import build_parser, main
+from onec_ops.actions import get_actions
+from onec_ops.cli import build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
 
 REPO_ACTIONS = [action for action in get_actions() if action.name.startswith("repo-")]
 ADD_USER_ARGS = ["--user", "dev", "--rights", "LockObjects"]
@@ -21,7 +21,7 @@ def _required_args(action):
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     return mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
 
@@ -67,8 +67,8 @@ def test_cli_uses_runner_with_absolute_paths(
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     args = ["--platform", str(platform), "--ib", "ib", action.name, "--storage", "storage"]
     if action.name == "repo-create":
         args += ["--user", "admin", "--password", "secret"]

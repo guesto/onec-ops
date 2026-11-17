@@ -6,17 +6,17 @@ import subprocess
 
 import pytest
 
-from scripts.actions.dump_config import DumpConfigAction
-from scripts.actions.load_config import LoadConfigAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.onec_ops import build_parser, main
+from onec_ops.actions.dump_config import DumpConfigAction
+from onec_ops.actions.load_config import LoadConfigAction
+from onec_ops.cli import build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
 
 
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     """Запрещает реальные дочерние процессы во всех CLI-тестах."""
     return mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
 
@@ -104,7 +104,7 @@ def test_cli_uses_runner_with_absolute_paths(
     if action_name == "load-config":
         xml.mkdir()
         (xml / "Configuration.xml").write_text("<Configuration/>", encoding="utf-8")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     arguments = ["--platform", str(platform), "--ib", "ib", action_name, option, "xml"]
     if dry_run:
         arguments += ["--dry-run"]

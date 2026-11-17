@@ -8,8 +8,8 @@ import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from scripts.lib.exceptions import OneCFailed, OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.lib.exceptions import OneCFailed, OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 logger = logging.getLogger(__name__)
 

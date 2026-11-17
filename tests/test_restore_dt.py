@@ -8,17 +8,17 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.restore_dt import RestoreDtAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import build_parser, main
+from onec_ops.actions.restore_dt import RestoreDtAction
+from onec_ops.cli import build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     mocker.patch("subprocess.Popen")
     return mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
 
@@ -42,7 +42,7 @@ def ctx(tmp_path):
 
 @pytest.fixture
 def stdin(mocker):
-    stream = mocker.patch("scripts.actions.restore_dt.sys.stdin")
+    stream = mocker.patch("onec_ops.actions.restore_dt.sys.stdin")
     stream.isatty.return_value = True
     stream.readline.return_value = "Y\n"
     return stream
@@ -175,8 +175,8 @@ def test_pre_run_non_tty_requires_force_yes(ns, ctx, stdin, force):
 
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_cli_runs_with_mocked_subprocess(ns, ctx, subprocess_mock, mocker, stdin, caplog, dry_run):
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [
         "--platform",
         str(ctx.platform_path),
@@ -211,7 +211,7 @@ def test_cli_runs_with_mocked_subprocess(ns, ctx, subprocess_mock, mocker, stdin
 def test_cli_non_tty_never_restores_without_force_yes(
     ns, ctx, subprocess_mock, mocker, stdin, caplog, flags
 ):
-    mocker.patch("scripts.onec_ops.check_environment")
+    mocker.patch("onec_ops.cli.check_environment")
     stdin.isatty.return_value = False
     assert (
         main(
@@ -234,7 +234,7 @@ def test_cli_non_tty_never_restores_without_force_yes(
 
 
 def test_cli_cancellation_never_starts_restore(ns, ctx, subprocess_mock, mocker, stdin):
-    mocker.patch("scripts.onec_ops.check_environment")
+    mocker.patch("onec_ops.cli.check_environment")
     stdin.readline.return_value = "n\n"
     assert (
         main(

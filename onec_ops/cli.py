@@ -6,18 +6,17 @@ import argparse
 import logging
 import os
 import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from scripts.actions import get_actions
-from scripts.actions.base import Action
-from scripts.lib.config import load_config, resolve_platform
-from scripts.lib.exceptions import OneCFailed, OneCOpsError
-from scripts.lib.logging_setup import setup_logging
-from scripts.lib.platform_check import check_environment
-from scripts.lib.runner import RunContext, run_1c
+from onec_ops import skill_install
+from onec_ops.actions import get_actions
+from onec_ops.actions.base import Action
+from onec_ops.lib.config import load_config, resolve_platform
+from onec_ops.lib.exceptions import OneCFailed, OneCOpsError
+from onec_ops.lib.logging_setup import setup_logging
+from onec_ops.lib.platform_check import check_environment
+from onec_ops.lib.runner import RunContext, run_1c
 
 logger = logging.getLogger(__name__)
 _LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
@@ -70,9 +69,17 @@ def _resolve_ib_auth(ns: argparse.Namespace, action: Action) -> None:
     ns.ib_password = password
 
 
+def _version() -> str:
+    try:
+        return version("onec-ops")
+    except PackageNotFoundError:
+        return "unknown"
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Строит парсер командной строки."""
     parser = argparse.ArgumentParser(prog="onec-ops", description="Пакетные операции 1С")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {_version()}")
     _add_common_arguments(parser)
     subparsers = parser.add_subparsers(dest="action", required=True)
     for action in get_actions():
@@ -81,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
         )
         _add_common_arguments(action_parser)
         action.add_arguments(action_parser)
+    skill_install.add_parser(subparsers)
     return parser
 
 
@@ -104,6 +112,8 @@ def main(argv: list[str] | None = None) -> int:
     ns.timeout = getattr(ns, "timeout", 600)
     try:
         setup_logging(ns.log_level, ns.log_file)
+        if ns.action == skill_install.NAME:
+            return skill_install.run(ns)
         config = load_config(ns.config)
         action = next(item for item in get_actions() if item.name == ns.action)
         _resolve_ib_auth(ns, action)
