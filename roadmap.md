@@ -369,6 +369,18 @@ v0.4.0, v0.5.0, v0.5.1, v0.5.2, v0.5.3, v0.6.0, v0.7.0, v0.8.0, v0.8.1, v0.8.2, 
 - Проверка актуальности копий для всех каталогов агентов.
 - Код и навык не менялись; 572 теста, покрытие 98%.
 
+### v0.9.3 — Публикация в PyPI [ГОТОВО]
+
+**Дата:** 2026-11-18
+
+**ТЗ:** [docs/v0.9.3.md](docs/v0.9.3.md).
+
+- Пакет `scripts` переименован в `onec_ops`; `python -m onec_ops`, `--version`.
+- Навык внутри wheel, команда `onec-ops install-skill` (с `--check`).
+- Сборка через hatchling, данные автора и ссылки в `pyproject.toml`.
+- Публикация в PyPI по тегу через Trusted Publishing; проверка wheel в CI.
+- 600 тестов, покрытие 98%.
+
 ---
 
 ## Планируемые релизы
@@ -383,18 +395,6 @@ v0.4.0, v0.5.0, v0.5.1, v0.5.2, v0.5.3, v0.6.0, v0.7.0, v0.8.0, v0.8.1, v0.8.2, 
 - Документация по подготовке серверной среды.
 - Unit-тесты с моками (реальный сервер может быть недоступен).
 - Skill: `create-ib --type server` вместо заглушки.
-
-### v0.9.3 — Публикация в PyPI [ПЛАНИРУЕТСЯ]
-
-**Приоритет:** высокий перед v1.0.
-
-- Переименование пакета `scripts` в `onec_ops`, запуск `python -m onec_ops`, `--version`.
-- Навык внутри пакета и команда `onec-ops install-skill` (с `--check`).
-- Данные автора и ссылки в `pyproject.toml`, сборка через hatchling.
-- Публикация в PyPI по тегу через Trusted Publishing (`pipx install onec-ops`).
-- Проверка wheel в CI: состав, установка в чистое окружение, `install-skill`.
-
-**ТЗ:** [docs/v0.9.3.md](docs/v0.9.3.md).
 
 ### v1.0.0 — Стабильный релиз [ПЛАНИРУЕТСЯ]
 
@@ -444,8 +444,9 @@ v0.4.0, v0.5.0, v0.5.1, v0.5.2, v0.5.3, v0.6.0, v0.7.0, v0.8.0, v0.8.1, v0.8.2, 
 ### Установка
 
 - **Для разработки:** `pip install -e ".[dev]"` в venv.
-- **Для использования:** `pipx install git+https://github.com/guesto/onec-ops.git`.
-- **Для публикации (v0.9.3):** `pipx install onec-ops` из PyPI.
+- **Для использования:** `pipx install onec-ops` из PyPI (с v0.9.3), навык — `onec-ops install-skill`.
+- **Версия из `main`:** `pipx install git+https://github.com/guesto/onec-ops.git`.
+- **Публикация:** тег `vX.Y.Z` → `publish.yml` → PyPI (Trusted Publishing).
 
 ---
 

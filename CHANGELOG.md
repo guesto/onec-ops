@@ -7,6 +7,31 @@
 
 ## [Unreleased]
 
+## [0.9.3] — 2026-11-18
+
+### Added
+
+- Публикация в PyPI: `pipx install onec-ops`. Workflow `publish.yml` публикует
+  по тегу `vX.Y.Z` через Trusted Publishing и проверяет, что тег совпадает с версией.
+- `onec-ops install-skill`: копирует навык из пакета агентам (Claude Code, Codex,
+  Kimi Code, `~/.agents`), `--project`, `--target`, `--dry-run`; `--check`
+  показывает устаревшие копии.
+- `onec-ops --version` и запуск `python -m onec_ops`.
+- CI: задача `package` собирает wheel, проверяет состав и `install-skill`
+  на Linux и Windows.
+
+### Changed
+
+- Пакет `scripts` переименован в `onec_ops`, модуль CLI — `onec_ops/cli.py`.
+- Сборка через hatchling, навык входит в wheel как `onec_ops/skill/`.
+- Данные автора и ссылки проекта в `pyproject.toml`.
+- README и CONTRIBUTING: установка из PyPI, навык через `install-skill`.
+
+### Removed
+
+- Запуск файлом `python scripts/onec_ops.py`: используйте `onec-ops` или
+  `python -m onec_ops`.
+
 ## [0.9.2] — 2026-11-16
 
 ### Added
