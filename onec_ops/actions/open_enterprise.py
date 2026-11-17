@@ -8,8 +8,8 @@ import os
 import sys
 from pathlib import Path
 
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import (
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import (
     RunContext,
     _detect_codex_sandbox,
     _verify_display,

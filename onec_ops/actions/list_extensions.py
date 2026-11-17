@@ -7,7 +7,7 @@ import logging
 import re
 import subprocess
 
-from scripts.lib.runner import RunContext
+from onec_ops.lib.runner import RunContext
 
 from .base import Action
 

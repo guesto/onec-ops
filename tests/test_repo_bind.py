@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.repo_bind import RepoBindAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.actions.repo_bind import RepoBindAction
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 @pytest.fixture

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.dump_config import DumpConfigAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.actions.dump_config import DumpConfigAction
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 def _namespace(tmp_path: Path, **options) -> argparse.Namespace:
@@ -121,13 +121,13 @@ def test_validate_destination_is_file(tmp_path):
 
 
 def test_validate_destination_not_writable(tmp_path, mocker):
-    mocker.patch("scripts.actions.dump_config.os.access", return_value=False)
+    mocker.patch("onec_ops.actions.dump_config.os.access", return_value=False)
     with pytest.raises(OneCOpsError, match="недоступен для записи"):
         DumpConfigAction().validate(_namespace(tmp_path))
 
 
 def test_pre_run_directory_error(tmp_path, mocker):
     ns = _namespace(tmp_path)
-    mocker.patch("scripts.actions.dump_config.Path.mkdir", side_effect=PermissionError("denied"))
+    mocker.patch("onec_ops.actions.dump_config.Path.mkdir", side_effect=PermissionError("denied"))
     with pytest.raises(OneCOpsError, match="Не удалось подготовить"):
         DumpConfigAction().pre_run(ns, RunContext(tmp_path / "1cv8"))

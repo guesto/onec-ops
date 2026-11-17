@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.check_modules import CheckConfigAction, CheckModulesAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import build_parser, main
+from onec_ops.actions.check_modules import CheckConfigAction, CheckModulesAction
+from onec_ops.cli import build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 ALL_MODES = [
     "-ThinClient",
@@ -52,8 +52,8 @@ def cli(tmp_path, ib, mocker):
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
 
     def run(*argv):
         return main(["--platform", str(platform), "--ib", str(ib), *argv])
@@ -118,7 +118,7 @@ def test_validate_extension_target(name, argv, ib):
 @pytest.mark.parametrize("name", ACTIONS)
 def test_success(name, cli, mocker, caplog):
     run = mocker.patch(
-        "scripts.lib.runner._execute",
+        "onec_ops.lib.runner._execute",
         side_effect=_fake_run(0, "Синтаксических ошибок не обнаружено!"),
     )
     caplog.set_level("INFO")
@@ -130,7 +130,7 @@ def test_success(name, cli, mocker, caplog):
 
 @pytest.mark.parametrize("name", ACTIONS)
 def test_findings_return_one_with_full_text(name, cli, mocker, caplog):
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(101, FINDINGS))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(101, FINDINGS))
 
     assert cli(name) == 1
     errors = [r.getMessage() for r in caplog.records if r.levelname == "ERROR"]
@@ -139,7 +139,7 @@ def test_findings_return_one_with_full_text(name, cli, mocker, caplog):
 
 @pytest.mark.parametrize("name", ACTIONS)
 def test_other_code_is_regular_failure(name, cli, mocker, caplog):
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, "Расширение не найдено."))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(1, "Расширение не найдено."))
 
     assert cli(name) == 1
     errors = [r.getMessage() for r in caplog.records if r.levelname == "ERROR"]
@@ -147,7 +147,7 @@ def test_other_code_is_regular_failure(name, cli, mocker, caplog):
 
 
 def test_code_101_stays_regular_failure_in_other_commands(cli, mocker, caplog):
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(101, "Текст"))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(101, "Текст"))
 
     assert cli("update-db") == 1
     assert "1С завершилась с ненулевым кодом: 101" in caplog.text
@@ -156,7 +156,7 @@ def test_code_101_stays_regular_failure_in_other_commands(cli, mocker, caplog):
 
 @pytest.mark.parametrize("name", ACTIONS)
 def test_dry_run_does_not_start_1c(name, cli, mocker):
-    run = mocker.patch("scripts.lib.runner._execute")
+    run = mocker.patch("onec_ops.lib.runner._execute")
 
     assert cli("--dry-run", name) == 0
     run.assert_not_called()

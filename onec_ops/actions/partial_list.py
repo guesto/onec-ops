@@ -8,7 +8,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from scripts.lib.exceptions import OneCOpsError
+from onec_ops.lib.exceptions import OneCOpsError
 
 logger = logging.getLogger(__name__)
 

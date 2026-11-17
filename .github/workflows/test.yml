@@ -29,10 +29,10 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint with ruff
-        run: ruff check scripts tests
+        run: ruff check onec_ops tests
 
       - name: Check formatting
-        run: ruff format --check scripts tests
+        run: ruff format --check onec_ops tests
 
       - name: Run tests
         run: pytest -v --junitxml=report.xml
@@ -43,3 +43,37 @@ jobs:
 
       - name: Check CLI starts
         run: onec-ops --help
+
+  package:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Build
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          twine check --strict dist/*
+
+      - name: Check wheel contents and install-skill
+        shell: bash
+        run: |
+          python .github/scripts/check_wheel.py dist/*.whl
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          venv="$RUNNER_TEMP/wheel-venv"
+          if [ -x "$venv/bin/python" ]; then bin="$venv/bin"; else bin="$venv/Scripts"; fi
+          "$bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$bin/onec-ops" --version
+          "$bin/onec-ops" install-skill --target "$RUNNER_TEMP/skill"
+          "$bin/onec-ops" install-skill --target "$RUNNER_TEMP/skill" --check
+          test -f "$RUNNER_TEMP/skill/references/commands.md"

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.repo_add_user import RepoAddUserAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.actions.repo_add_user import RepoAddUserAction
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 def _parser():

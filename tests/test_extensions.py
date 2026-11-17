@@ -8,12 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.check_extension import CheckExtensionAction
-from scripts.actions.delete_extension import DeleteExtensionAction
-from scripts.actions.list_extensions import ListExtensionsAction, parse_extension_names
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import build_parser, main
+from onec_ops.actions.check_extension import CheckExtensionAction
+from onec_ops.actions.delete_extension import DeleteExtensionAction
+from onec_ops.actions.list_extensions import ListExtensionsAction, parse_extension_names
+from onec_ops.cli import build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 TARGET_ACTIONS = [CheckExtensionAction(), DeleteExtensionAction()]
 
@@ -41,8 +41,8 @@ def cli(tmp_path, ib, mocker):
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
 
     def run(*argv):
         return main(["--platform", str(platform), "--ib", str(ib), *argv])
@@ -95,7 +95,7 @@ def test_list_build_1c_args(ib, ctx):
 
 def test_list_cli_prints_names_to_stdout(cli, mocker, capsys):
     mocker.patch(
-        "scripts.lib.runner._execute",
+        "onec_ops.lib.runner._execute",
         side_effect=_fake_run(
             0, "Соединение с хранилищем конфигурации не установлено\r\nonec\r\next2\r\n"
         ),
@@ -105,7 +105,7 @@ def test_list_cli_prints_names_to_stdout(cli, mocker, capsys):
 
 
 def test_list_cli_no_extensions(cli, mocker, capsys, caplog):
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
     with caplog.at_level("INFO"):
         assert cli("list-extensions") == 0
     assert capsys.readouterr().out == ""
@@ -113,7 +113,7 @@ def test_list_cli_no_extensions(cli, mocker, capsys, caplog):
 
 
 def test_list_cli_dry_run(cli, mocker, capsys):
-    run = mocker.patch("scripts.lib.runner._execute")
+    run = mocker.patch("onec_ops.lib.runner._execute")
     assert cli("--dry-run", "list-extensions") == 0
     run.assert_not_called()
     assert capsys.readouterr().out == ""
@@ -178,7 +178,7 @@ def test_target_build_1c_args(action, key, argv, tail, ib, ctx):
     ],
 )
 def test_check_cli_ok(cli, mocker, caplog, argv, message):
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
     with caplog.at_level("INFO"):
         assert cli("check-extension", *argv) == 0
     assert message in caplog.text
@@ -186,14 +186,14 @@ def test_check_cli_ok(cli, mocker, caplog, argv, message):
 
 def test_check_cli_failure_shows_1c_reasons(cli, mocker, caplog):
     reason = "onec: Не найден объект Справочник.Номенклатура"
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, reason))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(1, reason))
     assert cli("check-extension", "--extension", "onec") == 1
     assert reason in caplog.text
     assert "можно применить" not in caplog.text
 
 
 def test_check_cli_dry_run(cli, mocker, caplog):
-    run = mocker.patch("scripts.lib.runner._execute")
+    run = mocker.patch("onec_ops.lib.runner._execute")
     with caplog.at_level("INFO"):
         assert cli("--dry-run", "check-extension", "--all-extensions") == 0
     run.assert_not_called()
@@ -205,7 +205,7 @@ def test_check_cli_dry_run(cli, mocker, caplog):
 
 def test_delete_cli_with_yes(cli, mocker, caplog):
     run = mocker.patch(
-        "scripts.lib.runner._execute", side_effect=_fake_run(0, "Расширение удалено: onec")
+        "onec_ops.lib.runner._execute", side_effect=_fake_run(0, "Расширение удалено: onec")
     )
     with caplog.at_level("WARNING"):
         assert cli("delete-extension", "--extension", "onec", "--yes") == 0
@@ -216,7 +216,7 @@ def test_delete_cli_with_yes(cli, mocker, caplog):
 
 @pytest.mark.parametrize(("answer", "code"), [("Y\n", 0), ("yes\n", 0), ("n\n", 1), ("\n", 1)])
 def test_delete_cli_interactive(cli, mocker, monkeypatch, caplog, answer, code):
-    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
+    run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
     stdin = io.StringIO(answer)
     stdin.isatty = lambda: True
     monkeypatch.setattr("sys.stdin", stdin)
@@ -229,7 +229,7 @@ def test_delete_cli_interactive(cli, mocker, monkeypatch, caplog, answer, code):
 
 
 def test_delete_cli_without_tty_requires_yes(cli, mocker, monkeypatch, caplog):
-    run = mocker.patch("scripts.lib.runner._execute")
+    run = mocker.patch("onec_ops.lib.runner._execute")
     stdin = io.StringIO("")
     stdin.isatty = lambda: False
     monkeypatch.setattr("sys.stdin", stdin)
@@ -239,14 +239,14 @@ def test_delete_cli_without_tty_requires_yes(cli, mocker, monkeypatch, caplog):
 
 
 def test_delete_cli_dry_run_with_yes(cli, mocker):
-    run = mocker.patch("scripts.lib.runner._execute")
+    run = mocker.patch("onec_ops.lib.runner._execute")
     assert cli("--dry-run", "delete-extension", "--extension", "onec", "--yes") == 0
     run.assert_not_called()
 
 
 def test_delete_cli_missing_extension(cli, mocker, caplog):
     message = "расширение конфигурации с указанным именем не найдено: nosuch"
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, message))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(1, message))
     assert cli("delete-extension", "--extension", "nosuch", "--yes") == 1
     assert message in caplog.text
 
@@ -257,7 +257,7 @@ def test_delete_cli_missing_extension(cli, mocker, caplog):
 def test_optional_target_without_choice():
     from argparse import Namespace
 
-    from scripts.actions.extension_target import extension_target_args, validate_extension_target
+    from onec_ops.actions.extension_target import extension_target_args, validate_extension_target
 
     ns = Namespace(extension=None, all_extensions=False)
     validate_extension_target(ns, required=False)

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions import get_actions
+from onec_ops.actions import get_actions
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILL = ROOT / "SKILL.md"

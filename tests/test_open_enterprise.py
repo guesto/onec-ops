@@ -8,20 +8,20 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.open_enterprise import OpenEnterpriseAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import main
+from onec_ops.actions.open_enterprise import OpenEnterpriseAction
+from onec_ops.cli import main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 @pytest.fixture(autouse=True)
 def gui_environment(monkeypatch, mocker):
-    monkeypatch.setattr("scripts.actions.open_enterprise.sys.platform", "linux")
+    monkeypatch.setattr("onec_ops.actions.open_enterprise.sys.platform", "linux")
     monkeypatch.setenv("DISPLAY", ":99")
-    mocker.patch("scripts.actions.open_enterprise._verify_display", return_value=True)
-    mocker.patch("scripts.actions.open_enterprise._detect_codex_sandbox", return_value=False)
+    mocker.patch("onec_ops.actions.open_enterprise._verify_display", return_value=True)
+    mocker.patch("onec_ops.actions.open_enterprise._detect_codex_sandbox", return_value=False)
     run = mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
     popen = mocker.patch("subprocess.Popen", return_value=mocker.Mock(pid=1234))
     return run, popen
@@ -70,14 +70,14 @@ def test_validate_missing_display(ns, monkeypatch):
 
 
 def test_validate_display_not_working(ns, mocker):
-    verify = mocker.patch("scripts.actions.open_enterprise._verify_display", return_value=False)
+    verify = mocker.patch("onec_ops.actions.open_enterprise._verify_display", return_value=False)
     with pytest.raises(OneCOpsError, match="X-сервер.*не отвечает"):
         OpenEnterpriseAction().validate(ns)
     verify.assert_called_once_with(":99")
 
 
 def test_validate_sandbox_detected(ns, mocker):
-    mocker.patch("scripts.actions.open_enterprise._detect_codex_sandbox", return_value=True)
+    mocker.patch("onec_ops.actions.open_enterprise._detect_codex_sandbox", return_value=True)
     with pytest.raises(OneCOpsError, match="sandbox-режиме Codex"):
         OpenEnterpriseAction().validate(ns)
 
@@ -87,10 +87,10 @@ def test_validate_ok(ns):
 
 
 def test_validate_windows_without_display(ns, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.actions.open_enterprise.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.actions.open_enterprise.sys.platform", "win32")
     monkeypatch.delenv("DISPLAY", raising=False)
-    verify = mocker.patch("scripts.actions.open_enterprise._verify_display")
-    sandbox = mocker.patch("scripts.actions.open_enterprise._detect_codex_sandbox")
+    verify = mocker.patch("onec_ops.actions.open_enterprise._verify_display")
+    sandbox = mocker.patch("onec_ops.actions.open_enterprise._detect_codex_sandbox")
     OpenEnterpriseAction().validate(ns)
     verify.assert_not_called()
     sandbox.assert_not_called()
@@ -143,7 +143,7 @@ def test_build_1c_args_with_c(ns, ctx):
 @pytest.mark.parametrize("no_wait", [False, True])
 def test_cli_starts_exactly_once(ns, ctx, no_wait, gui_environment, mocker, caplog):
     run, popen = gui_environment
-    mocker.patch("scripts.onec_ops.check_environment")
+    mocker.patch("onec_ops.cli.check_environment")
     argv = [
         "--platform",
         str(ctx.platform_path),
@@ -189,10 +189,10 @@ def test_cli_dry_run_without_display_or_xvfb(
 ):
     run, popen = gui_environment
     monkeypatch.delenv("DISPLAY", raising=False)
-    mocker.patch("scripts.lib.runner.shutil.which", return_value=None)
-    verify = mocker.patch("scripts.actions.open_enterprise._verify_display")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value=None)
+    verify = mocker.patch("onec_ops.actions.open_enterprise._verify_display")
     sandbox = mocker.patch(
-        "scripts.actions.open_enterprise._detect_codex_sandbox", return_value=True
+        "onec_ops.actions.open_enterprise._detect_codex_sandbox", return_value=True
     )
     argv = [
         "--platform",
@@ -218,7 +218,7 @@ def test_cli_dry_run_without_display_or_xvfb(
 def test_cli_missing_display_prevents_launch(ns, ctx, gui_environment, monkeypatch, mocker, caplog):
     run, popen = gui_environment
     monkeypatch.delenv("DISPLAY", raising=False)
-    environment = mocker.patch("scripts.onec_ops.check_environment")
+    environment = mocker.patch("onec_ops.cli.check_environment")
     assert main(["--platform", str(ctx.platform_path), "--ib", str(ns.ib), "open-enterprise"]) == 1
     assert "реальный DISPLAY" in caplog.text
     environment.assert_not_called()

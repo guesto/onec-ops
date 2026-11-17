@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.lib.exceptions import OneCFailed, PlatformNotFound, XvfbNotAvailable
-from scripts.lib.runner import RunContext, _execute, build_command, run_1c, run_1c_popen
+from onec_ops.lib.exceptions import OneCFailed, PlatformNotFound, XvfbNotAvailable
+from onec_ops.lib.runner import RunContext, _execute, build_command, run_1c, run_1c_popen
 
 
 def _platform(tmp_path: Path) -> Path:
@@ -23,14 +23,14 @@ def _platform(tmp_path: Path) -> Path:
 
 def test_build_command_uses_platform_directly_on_windows(tmp_path, monkeypatch):
     platform = _platform(tmp_path)
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
 
     assert build_command(["DESIGNER"], RunContext(platform)) == [str(platform), "DESIGNER"]
 
 
 def test_build_command_uses_platform_with_display(tmp_path, monkeypatch):
     platform = _platform(tmp_path)
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "linux")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "linux")
     monkeypatch.setenv("DISPLAY", ":99")
 
     assert build_command(["DESIGNER"], RunContext(platform)) == [str(platform), "DESIGNER"]
@@ -38,9 +38,9 @@ def test_build_command_uses_platform_with_display(tmp_path, monkeypatch):
 
 def test_build_command_uses_xvfb_without_display(tmp_path, monkeypatch):
     platform = _platform(tmp_path)
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "linux")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "linux")
     monkeypatch.delenv("DISPLAY", raising=False)
-    monkeypatch.setattr("scripts.lib.runner.shutil.which", lambda name: "/usr/bin/xvfb-run")
+    monkeypatch.setattr("onec_ops.lib.runner.shutil.which", lambda name: "/usr/bin/xvfb-run")
 
     assert build_command(["DESIGNER"], RunContext(platform)) == [
         "xvfb-run",
@@ -53,17 +53,17 @@ def test_build_command_uses_xvfb_without_display(tmp_path, monkeypatch):
 
 
 def test_build_command_fails_without_display_or_xvfb(tmp_path, monkeypatch):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "linux")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "linux")
     monkeypatch.delenv("DISPLAY", raising=False)
-    monkeypatch.setattr("scripts.lib.runner.shutil.which", lambda name: None)
+    monkeypatch.setattr("onec_ops.lib.runner.shutil.which", lambda name: None)
 
     with pytest.raises(XvfbNotAvailable):
         build_command(["DESIGNER"], RunContext(_platform(tmp_path)))
 
 
 def test_dry_run_does_not_start_subprocess(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    run_mock = mocker.patch("scripts.lib.runner._execute")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    run_mock = mocker.patch("onec_ops.lib.runner._execute")
 
     result = run_1c(["DESIGNER"], RunContext(_platform(tmp_path), dry_run=True))
 
@@ -72,8 +72,10 @@ def test_dry_run_does_not_start_subprocess(tmp_path, monkeypatch, mocker):
 
 
 def test_timeout_becomes_onec_failed(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    mocker.patch("scripts.lib.runner._execute", side_effect=subprocess.TimeoutExpired(["1cv8"], 10))
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    mocker.patch(
+        "onec_ops.lib.runner._execute", side_effect=subprocess.TimeoutExpired(["1cv8"], 10)
+    )
 
     with pytest.raises(OneCFailed) as error:
         run_1c(["DESIGNER"], RunContext(_platform(tmp_path), timeout=10))
@@ -82,9 +84,9 @@ def test_timeout_becomes_onec_failed(tmp_path, monkeypatch, mocker):
 
 
 def test_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
     with caplog.at_level("INFO"):
@@ -99,9 +101,9 @@ def test_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
 
 
 def test_repo_user_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
     with caplog.at_level("INFO"):
@@ -116,11 +118,11 @@ def test_repo_user_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, cap
 
 
 def test_popen_when_no_wait(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     platform = _platform(tmp_path)
     process = mocker.Mock(pid=1234)
     popen = mocker.patch("subprocess.Popen", return_value=process)
-    run = mocker.patch("scripts.lib.runner._execute")
+    run = mocker.patch("onec_ops.lib.runner._execute")
     assert run_1c_popen(["DESIGNER"], RunContext(platform)) is process
     popen.assert_called_once_with(
         [str(platform), "DESIGNER"],
@@ -131,14 +133,14 @@ def test_popen_when_no_wait(tmp_path, monkeypatch, mocker):
 
 
 def test_popen_dry_run_does_not_start_process(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     popen = mocker.patch("subprocess.Popen")
     assert run_1c_popen(["DESIGNER"], RunContext(_platform(tmp_path), dry_run=True)) is None
     popen.assert_not_called()
 
 
 def test_popen_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     mocker.patch("subprocess.Popen", return_value=mocker.Mock(pid=1234))
     with caplog.at_level("INFO"):
         run_1c_popen(["DESIGNER", "/P", "secret"], RunContext(_platform(tmp_path)))
@@ -147,7 +149,7 @@ def test_popen_password_is_masked_in_logs(tmp_path, monkeypatch, mocker, caplog)
 
 
 def test_popen_os_error_becomes_onec_failed(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     mocker.patch("subprocess.Popen", side_effect=OSError("launch failed"))
     with pytest.raises(OneCFailed, match="Не удалось запустить 1С") as error:
         run_1c_popen(["DESIGNER"], RunContext(_platform(tmp_path)))
@@ -155,9 +157,9 @@ def test_popen_os_error_becomes_onec_failed(tmp_path, monkeypatch, mocker):
 
 
 def test_gui_command_dry_run_does_not_use_xvfb(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "linux")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "linux")
     monkeypatch.delenv("DISPLAY", raising=False)
-    which = mocker.patch("scripts.lib.runner.shutil.which")
+    which = mocker.patch("onec_ops.lib.runner.shutil.which")
     platform = _platform(tmp_path)
     assert build_command(["DESIGNER"], RunContext(platform, requires_gui=True, dry_run=True)) == [
         str(platform),
@@ -180,8 +182,8 @@ def _fake_run(returncode: int, out_text: str | None = None):
 
 @pytest.mark.parametrize("mode", ["DESIGNER", "CREATEINFOBASE"])
 def test_out_file_added_and_removed(tmp_path, monkeypatch, mocker, mode):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, ""))
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
 
     run_1c([mode, "/F", "ib"], RunContext(_platform(tmp_path)))
 
@@ -200,10 +202,10 @@ def test_out_file_added_and_removed(tmp_path, monkeypatch, mocker, mode):
     ],
 )
 def test_out_file_not_added(tmp_path, monkeypatch, mocker, args, ctx_kwargs):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     platform = _platform(tmp_path)
     run = mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
     run_1c(args, RunContext(platform, **ctx_kwargs))
@@ -212,8 +214,8 @@ def test_out_file_not_added(tmp_path, monkeypatch, mocker, args, ctx_kwargs):
 
 
 def test_dry_run_does_not_add_out_file(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    mkstemp = mocker.patch("scripts.lib.runner.tempfile.mkstemp")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    mkstemp = mocker.patch("onec_ops.lib.runner.tempfile.mkstemp")
 
     result = run_1c(["DESIGNER"], RunContext(_platform(tmp_path), dry_run=True))
 
@@ -222,10 +224,10 @@ def test_dry_run_does_not_add_out_file(tmp_path, monkeypatch, mocker):
 
 
 def test_existing_out_is_read_and_kept(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     platform = _platform(tmp_path)
     out_file = tmp_path / "out.txt"
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, "Ошибка из /out"))
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(1, "Ошибка из /out"))
 
     with pytest.raises(OneCFailed, match="Ошибка из /out"):
         run_1c(["DESIGNER", "/out", str(out_file)], RunContext(platform))
@@ -234,9 +236,9 @@ def test_existing_out_is_read_and_kept(tmp_path, monkeypatch, mocker):
 
 
 def test_out_text_in_error_and_log(tmp_path, monkeypatch, mocker, caplog):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     message = "Пользователь хранилища конфигурации с именем 'user2' уже существует"
-    run = mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, message + "\r\n"))
+    run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(1, message + "\r\n"))
 
     with caplog.at_level("INFO"), pytest.raises(OneCFailed) as error:
         run_1c(["DESIGNER"], RunContext(_platform(tmp_path)))
@@ -248,8 +250,8 @@ def test_out_text_in_error_and_log(tmp_path, monkeypatch, mocker, caplog):
 
 
 def test_empty_out_keeps_plain_error(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(1, ""))
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(1, ""))
 
     with pytest.raises(OneCFailed) as error:
         run_1c(["DESIGNER"], RunContext(_platform(tmp_path)))
@@ -258,13 +260,13 @@ def test_empty_out_keeps_plain_error(tmp_path, monkeypatch, mocker):
 
 
 def test_missing_out_file_is_not_an_error(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
 
     def run(command, **kwargs):
         Path(command[-1]).unlink()
         return subprocess.CompletedProcess(command, 1, "", "")
 
-    mocker.patch("scripts.lib.runner._execute", side_effect=run)
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=run)
 
     with pytest.raises(OneCFailed) as error:
         run_1c(["DESIGNER"], RunContext(_platform(tmp_path)))
@@ -273,7 +275,7 @@ def test_missing_out_file_is_not_an_error(tmp_path, monkeypatch, mocker):
 
 
 def test_timeout_includes_out_text_and_removes_file(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     paths = []
 
     def run(command, **kwargs):
@@ -281,7 +283,7 @@ def test_timeout_includes_out_text_and_removes_file(tmp_path, monkeypatch, mocke
         paths[0].write_bytes("Ожидание блокировки".encode("utf-8-sig"))
         raise subprocess.TimeoutExpired(command, 10)
 
-    mocker.patch("scripts.lib.runner._execute", side_effect=run)
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=run)
 
     with pytest.raises(OneCFailed, match="Ожидание блокировки"):
         run_1c(["DESIGNER"], RunContext(_platform(tmp_path), timeout=10))
@@ -290,7 +292,7 @@ def test_timeout_includes_out_text_and_removes_file(tmp_path, monkeypatch, mocke
 
 
 def test_out_file_removed_when_platform_missing(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     created = []
     real_mkstemp = __import__("tempfile").mkstemp
 
@@ -299,7 +301,7 @@ def test_out_file_removed_when_platform_missing(tmp_path, monkeypatch, mocker):
         created.append(Path(name))
         return fd, name
 
-    mocker.patch("scripts.lib.runner.tempfile.mkstemp", side_effect=mkstemp)
+    mocker.patch("onec_ops.lib.runner.tempfile.mkstemp", side_effect=mkstemp)
 
     with pytest.raises(PlatformNotFound):
         run_1c(["DESIGNER"], RunContext(tmp_path / "missing"))
@@ -308,8 +310,8 @@ def test_out_file_removed_when_platform_missing(tmp_path, monkeypatch, mocker):
 
 
 def test_result_contains_out_text(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    mocker.patch("scripts.lib.runner._execute", side_effect=_fake_run(0, "onec\r\nДругое\r\n"))
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, "onec\r\nДругое\r\n"))
 
     result = run_1c(["DESIGNER"], RunContext(_platform(tmp_path)))
 
@@ -318,7 +320,7 @@ def test_result_contains_out_text(tmp_path, monkeypatch, mocker):
 
 
 def test_dry_run_result_has_empty_out_text(tmp_path, monkeypatch):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
 
     result = run_1c(["DESIGNER"], RunContext(_platform(tmp_path), dry_run=True))
 
@@ -410,34 +412,34 @@ def test_run_1c_timeout_leaves_no_processes(tmp_path, monkeypatch):
 
 
 def test_run_1c_os_error_becomes_onec_failed(tmp_path, monkeypatch, mocker):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
-    mocker.patch("scripts.lib.runner._execute", side_effect=OSError("Exec format error"))
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=OSError("Exec format error"))
     with pytest.raises(OneCFailed, match="Не удалось запустить 1С: Exec format error"):
         run_1c(["DESIGNER"], RunContext(_platform(tmp_path)))
 
 
 def test_kill_process_group_windows(monkeypatch, mocker):
-    from scripts.lib.runner import _kill_process_group
+    from onec_ops.lib.runner import _kill_process_group
 
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "win32")
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
     process = mocker.Mock(pid=4321)
-    killpg = mocker.patch("scripts.lib.runner.os.killpg", create=True)
+    killpg = mocker.patch("onec_ops.lib.runner.os.killpg", create=True)
     _kill_process_group(process)
     process.kill.assert_called_once_with()
     killpg.assert_not_called()
 
 
 def test_kill_process_group_already_gone(monkeypatch, mocker):
-    from scripts.lib.runner import _kill_process_group
+    from onec_ops.lib.runner import _kill_process_group
 
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", "linux")
-    mocker.patch("scripts.lib.runner.os.killpg", create=True, side_effect=ProcessLookupError)
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "linux")
+    mocker.patch("onec_ops.lib.runner.os.killpg", create=True, side_effect=ProcessLookupError)
     _kill_process_group(mocker.Mock(pid=4321))
 
 
 @posix_only
 def test_execute_kills_children_ignoring_sigterm(tmp_path, monkeypatch):
-    monkeypatch.setattr("scripts.lib.runner._TERMINATE_GRACE", 0.5)
+    monkeypatch.setattr("onec_ops.lib.runner._TERMINATE_GRACE", 0.5)
     pid_file = tmp_path / "grandchild.pid"
     script = tmp_path / "stubborn1cv8"
     script.write_text(

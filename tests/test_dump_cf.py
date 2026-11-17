@@ -8,16 +8,16 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.dump_cf import DumpCfAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import main
+from onec_ops.actions.dump_cf import DumpCfAction
+from onec_ops.cli import main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     return mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
 
@@ -83,8 +83,8 @@ def test_cli_runs_with_mocked_subprocess(ns, ctx, mocker, subprocess_mock, exten
         ns.to = ns.to.with_suffix(".cfe")
     ctx.platform_path.touch()
     ctx.platform_path.chmod(0o755)
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     arguments = [
         "--platform",
         str(ctx.platform_path),

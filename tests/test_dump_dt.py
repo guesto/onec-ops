@@ -8,17 +8,17 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.dump_dt import DumpDtAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
-from scripts.onec_ops import build_parser, main
+from onec_ops.actions.dump_dt import DumpDtAction
+from onec_ops.cli import build_parser, main
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 @pytest.fixture(autouse=True)
 def subprocess_mock(mocker):
     mocker.patch("subprocess.Popen")
     return mocker.patch(
-        "scripts.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
     )
 
 
@@ -91,7 +91,7 @@ def test_validate_parent_is_file(ns):
 
 
 def test_validate_parent_not_writable(ns, mocker):
-    mocker.patch("scripts.actions.dump_dt.os.access", return_value=False)
+    mocker.patch("onec_ops.actions.dump_dt.os.access", return_value=False)
     with pytest.raises(OneCOpsError, match="недоступен для записи"):
         DumpDtAction().validate(ns)
 
@@ -131,15 +131,15 @@ def test_pre_run_warns_about_overwrite(ns, ctx, caplog):
 
 
 def test_pre_run_directory_error(ns, ctx, mocker):
-    mocker.patch("scripts.actions.dump_dt.Path.mkdir", side_effect=PermissionError("denied"))
+    mocker.patch("onec_ops.actions.dump_dt.Path.mkdir", side_effect=PermissionError("denied"))
     with pytest.raises(OneCOpsError, match="Не удалось создать каталог"):
         DumpDtAction().pre_run(ns, ctx)
 
 
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_cli_runs_with_mocked_subprocess(ns, ctx, subprocess_mock, mocker, caplog, dry_run):
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     argv = [
         "--platform",
         str(ctx.platform_path),

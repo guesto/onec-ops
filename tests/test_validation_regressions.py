@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from scripts.lib.config import resolve_platform
-from scripts.lib.exceptions import PlatformNotFound
-from scripts.lib.runner import RunContext, build_command
-from scripts.onec_ops import main
+from onec_ops.cli import main
+from onec_ops.lib.config import resolve_platform
+from onec_ops.lib.exceptions import PlatformNotFound
+from onec_ops.lib.runner import RunContext, build_command
 
 
 @pytest.mark.parametrize("extension", ["", " \t"])
@@ -23,8 +23,8 @@ def test_blank_extension_never_runs_main_configuration(tmp_path, mocker, caplog,
     cf.write_bytes(b"configuration")
     option = "--from" if action.startswith("load") else "--to"
     source = xml if action.endswith("config") else cf
-    mocker.patch("scripts.onec_ops.check_environment")
-    run = mocker.patch("scripts.onec_ops.run_1c")
+    mocker.patch("onec_ops.cli.check_environment")
+    run = mocker.patch("onec_ops.cli.run_1c")
 
     assert main([action, "--ib", str(ib), option, str(source), "--extension", extension]) == 1
 
@@ -50,7 +50,7 @@ def test_relative_platform_uses_current_directory(tmp_path, monkeypatch, source)
 
 @pytest.mark.parametrize("system", ["linux", "win32"])
 def test_platform_directory_is_rejected_before_building_command(tmp_path, monkeypatch, system):
-    monkeypatch.setattr("scripts.lib.runner.sys.platform", system)
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", system)
     with pytest.raises(PlatformNotFound):
         build_command(["DESIGNER"], RunContext(tmp_path, dry_run=True))
 
@@ -63,8 +63,8 @@ def test_log_file_error_is_reported_before_platform_start(tmp_path, mocker, capl
         parent = tmp_path / "file"
         parent.touch()
         log_file = parent / "log.txt"
-    check = mocker.patch("scripts.onec_ops.check_environment")
-    run = mocker.patch("scripts.onec_ops.run_1c")
+    check = mocker.patch("onec_ops.cli.check_environment")
+    run = mocker.patch("onec_ops.cli.run_1c")
 
     assert (
         main(
@@ -97,8 +97,8 @@ def test_create_ib_file_path_error_is_reported_without_starting_platform(
     parent = tmp_path / "file"
     parent.write_text("keep", encoding="utf-8")
     path = parent if invalid_path == "file" else parent / "ib"
-    mocker.patch("scripts.onec_ops.check_environment")
-    run = mocker.patch("scripts.onec_ops.run_1c")
+    mocker.patch("onec_ops.cli.check_environment")
+    run = mocker.patch("onec_ops.cli.run_1c")
 
     assert main(["create-ib", "--type", "file", "--path", str(path), "--dry-run"]) == 1
 
@@ -109,9 +109,11 @@ def test_create_ib_file_path_error_is_reported_without_starting_platform(
 
 def test_create_ib_permission_error_is_reported(tmp_path, mocker, caplog):
     path = tmp_path / "ib"
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.actions.create_ib_file.Path.mkdir", side_effect=PermissionError("denied"))
-    run = mocker.patch("scripts.onec_ops.run_1c")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch(
+        "onec_ops.actions.create_ib_file.Path.mkdir", side_effect=PermissionError("denied")
+    )
+    run = mocker.patch("onec_ops.cli.run_1c")
 
     assert main(["create-ib", "--type", "file", "--path", str(path)]) == 1
 
@@ -123,11 +125,11 @@ def test_create_ib_permission_error_is_reported(tmp_path, mocker, caplog):
 def test_create_ib_removal_error_is_reported(tmp_path, mocker, caplog):
     database = tmp_path / "1Cv8.1CD"
     database.write_bytes(b"keep")
-    mocker.patch("scripts.onec_ops.check_environment")
+    mocker.patch("onec_ops.cli.check_environment")
     mocker.patch(
-        "scripts.actions.create_ib_file.shutil.rmtree", side_effect=PermissionError("denied")
+        "onec_ops.actions.create_ib_file.shutil.rmtree", side_effect=PermissionError("denied")
     )
-    run = mocker.patch("scripts.onec_ops.run_1c")
+    run = mocker.patch("onec_ops.cli.run_1c")
 
     assert main(["create-ib", "--type", "file", "--path", str(tmp_path), "--force", "--yes"]) == 1
 

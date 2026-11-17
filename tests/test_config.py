@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.lib import config
-from scripts.lib.config import load_config, resolve_platform
+from onec_ops.lib import config
+from onec_ops.lib.config import load_config, resolve_platform
 
 CLI = Path("/cli/1cv8")
 ENV = "/env/1cv8"
@@ -43,7 +43,7 @@ def test_empty_env_is_ignored(monkeypatch):
     [("linux", config._LINUX_PLATFORM), ("win32", config._WINDOWS_PLATFORM)],
 )
 def test_default_platform(monkeypatch, platform, expected):
-    monkeypatch.setattr("scripts.lib.config.sys.platform", platform)
+    monkeypatch.setattr("onec_ops.lib.config.sys.platform", platform)
     assert resolve_platform(None, {}) == expected
 
 
@@ -59,20 +59,20 @@ def test_load_config_explicit_path(tmp_path):
 
 def test_load_config_default_location(tmp_path, monkeypatch):
     (tmp_path / "config.toml").write_text('platform = "/default/1cv8"\n', encoding="utf-8")
-    monkeypatch.setattr("scripts.lib.config.user_config_dir", lambda name: str(tmp_path))
+    monkeypatch.setattr("onec_ops.lib.config.user_config_dir", lambda name: str(tmp_path))
     assert load_config(None) == {"platform": "/default/1cv8"}
 
 
 def test_cli_uses_config_platform(tmp_path, mocker, caplog):
-    from scripts.onec_ops import main
+    from onec_ops.cli import main
 
     platform = tmp_path / "1cv8"
     platform.touch()
     platform.chmod(0o755)
     path = tmp_path / "config.toml"
     path.write_text(f"platform = '{platform}'\n", encoding="utf-8")
-    mocker.patch("scripts.onec_ops.check_environment")
-    mocker.patch("scripts.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
     with caplog.at_level("INFO"):
         assert (
             main(
@@ -110,12 +110,12 @@ def test_cli_invalid_config_returns_error_without_starting_platform(
     source,
     message,
 ):
-    from scripts.onec_ops import main
+    from onec_ops.cli import main
 
     config_path = tmp_path / "config.toml"
     config_path.write_bytes(source)
-    run = mocker.patch("scripts.onec_ops.run_1c")
-    check = mocker.patch("scripts.onec_ops.check_environment")
+    run = mocker.patch("onec_ops.cli.run_1c")
+    check = mocker.patch("onec_ops.cli.check_environment")
     ib = tmp_path / "ib"
 
     assert (
@@ -131,9 +131,9 @@ def test_cli_invalid_config_returns_error_without_starting_platform(
 
 
 def test_cli_config_path_is_directory_returns_error(tmp_path, mocker, caplog):
-    from scripts.onec_ops import main
+    from onec_ops.cli import main
 
-    run = mocker.patch("scripts.onec_ops.run_1c")
+    run = mocker.patch("onec_ops.cli.run_1c")
     assert (
         main(
             [

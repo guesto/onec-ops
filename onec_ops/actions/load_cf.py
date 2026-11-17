@@ -6,8 +6,8 @@ import argparse
 import logging
 from pathlib import Path
 
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 from .base import Action
 from .extension_target import validate_extension_name

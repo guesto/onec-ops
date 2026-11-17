@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from scripts.actions.repo_create import RepoCreateAction
-from scripts.lib.exceptions import OneCOpsError
-from scripts.lib.runner import RunContext
+from onec_ops.actions.repo_create import RepoCreateAction
+from onec_ops.lib.exceptions import OneCOpsError
+from onec_ops.lib.runner import RunContext
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def test_validate_missing_storage(ns):
 
 
 def test_validate_storage_parent_not_writable(ns, mocker):
-    access = mocker.patch("scripts.actions.repo_create.os.access", return_value=False)
+    access = mocker.patch("onec_ops.actions.repo_create.os.access", return_value=False)
     with pytest.raises(OneCOpsError, match="недоступен для записи"):
         RepoCreateAction().validate(ns)
     assert access.call_args.args[0] == ns.storage.parent.parent
