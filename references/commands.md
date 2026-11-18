@@ -25,7 +25,7 @@
 --ib-user NAME          Пользователь ИБ (/N), см. «Пользователь ИБ»
 --ib-password PWD       Пароль пользователя ИБ (/P)
 --platform PATH         Путь к 1cv8
---config PATH           TOML-конфиг (по умолчанию ~/.config/onec-ops/config.toml)
+--config PATH           TOML-конфиг (по умолчанию — см. «Конфиг» ниже)
 --log-level LEVEL       DEBUG / INFO / WARNING / ERROR (по умолчанию INFO)
 --log-file PATH         Дублировать журнал в файл
 --dry-run               Проверить аргументы и показать команду 1С без запуска
@@ -41,8 +41,18 @@
 от текущего рабочего каталога. Платформа должна быть файлом, а в Linux —
 также иметь право исполнения; каталог отклоняется и при `--dry-run`.
 
+Конфиг по умолчанию:
+
+- Linux: `~/.config/onec-ops/config.toml` (или `$XDG_CONFIG_HOME/onec-ops/config.toml`);
+- Windows: `%LOCALAPPDATA%\onec-ops\onec-ops\config.toml` — имя `onec-ops`
+  повторяется дважды.
+
+Фактический путь на этой машине показывают `onec-ops --help` (у `--config`) и
+`--dry-run` (строка «Конфиг (по умолчанию): … — найден / не найден»). Он же
+выводится в ошибке «Платформа 1С не найдена».
+
 ```toml
-# ~/.config/onec-ops/config.toml
+# config.toml
 platform = "/opt/1cv8/x86_64/8.3.25.1374/1cv8"
 # Путь Windows — в одинарных кавычках: в двойных обратная косая считается экранированием
 # platform = 'C:\Program Files\1cv8\8.5.1.1343\bin\1cv8.exe'

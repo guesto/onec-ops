@@ -9,7 +9,7 @@ import pytest
 
 from onec_ops.actions.create_ib_file import CreateIbFileAction
 from onec_ops.lib.exceptions import OneCOpsError
-from onec_ops.lib.runner import RunContext
+from onec_ops.lib.runner import RawArg, RunContext
 
 
 def _namespace(
@@ -107,6 +107,14 @@ def test_build_args_quotes_path(tmp_path, name):
     args = CreateIbFileAction().build_1c_args(_namespace(path), RunContext(tmp_path / "1cv8"))
 
     assert args[1] == f'File="{path.resolve()}"'
+
+
+def test_build_args_connection_is_raw_for_windows(tmp_path):
+    args = CreateIbFileAction().build_1c_args(
+        _namespace(tmp_path / "ib"), RunContext(tmp_path / "1cv8")
+    )
+
+    assert isinstance(args[1], RawArg)
 
 
 def test_validate_rejects_double_quote_before_creating_directory(tmp_path):

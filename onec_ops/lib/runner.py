@@ -33,6 +33,30 @@ class RunContext:
     requires_gui: bool = False
 
 
+class RawArg(str):
+    r"""Аргумент 1С, который на Windows попадает в командную строку без экранирования.
+
+    Python собирает командную строку Windows по правилам MSVCRT и превращает
+    кавычку внутри аргумента в \". 1С разбирает строку сама и такого
+    экранирования не понимает: ``"File=\"C:\ib\""`` для неё — неверная строка
+    соединения. Значение не должно содержать двойных кавычек, кроме своих.
+    """
+
+
+def windows_command_line(command: list[str]) -> str:
+    """Собирает командную строку Windows: RawArg как есть, остальное через list2cmdline."""
+    return " ".join(
+        arg if isinstance(arg, RawArg) else subprocess.list2cmdline([arg]) for arg in command
+    )
+
+
+def _popen_args(command: list[str]) -> list[str] | str:
+    """На Windows с RawArg передаёт в Popen готовую строку, иначе список."""
+    if sys.platform == "win32" and any(isinstance(arg, RawArg) for arg in command):
+        return windows_command_line(command)
+    return command
+
+
 class OneCCompletedProcess(subprocess.CompletedProcess[str]):
     """Результат запуска 1С с текстом файла /Out."""
 
@@ -108,7 +132,7 @@ def _execute(command: list[str], *, timeout: int) -> subprocess.CompletedProcess
     Поэтому при таймауте и любом прерывании завершается вся группа.
     """
     with subprocess.Popen(
-        command,
+        _popen_args(command),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -269,7 +293,7 @@ def run_1c_popen(args: list[str], ctx: RunContext) -> subprocess.Popen | None:
         return None
     try:
         process = subprocess.Popen(
-            command,
+            _popen_args(command),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
