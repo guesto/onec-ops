@@ -151,3 +151,70 @@ def test_cli_config_path_is_directory_returns_error(tmp_path, mocker, caplog):
     assert "Не удалось загрузить конфигурационный файл" in caplog.text
     assert str(tmp_path) in caplog.text
     run.assert_not_called()
+
+
+def test_default_config_path_uses_platformdirs(tmp_path, monkeypatch):
+    monkeypatch.setattr("onec_ops.lib.config.user_config_dir", lambda name: str(tmp_path / name))
+    assert config.default_config_path() == tmp_path / "onec-ops" / "config.toml"
+
+
+def test_describe_config_default_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr("onec_ops.lib.config.user_config_dir", lambda name: str(tmp_path))
+    text = config.describe_config(None)
+    assert str(tmp_path / "config.toml") in text
+    assert "по умолчанию" in text
+    assert "не найден" in text
+
+
+def test_describe_config_explicit_found(tmp_path):
+    path = tmp_path / "my.toml"
+    path.write_text("", encoding="utf-8")
+    text = config.describe_config(path)
+    assert "--config" in text
+    assert str(path) in text
+    assert "не найден" not in text
+
+
+def test_platform_not_found_reports_config_path(tmp_path, monkeypatch, caplog):
+    from onec_ops.cli import main
+
+    monkeypatch.setattr("onec_ops.lib.config.user_config_dir", lambda name: str(tmp_path))
+    code = main(
+        [
+            "--platform",
+            str(tmp_path / "missing"),
+            "create-ib",
+            "--type",
+            "file",
+            "--path",
+            str(tmp_path / "ib"),
+        ]
+    )
+    assert code == 1
+    assert "Платформа 1С не найдена" in caplog.text
+    assert str(tmp_path / "config.toml") in caplog.text
+
+
+def test_dry_run_reports_config_path(tmp_path, monkeypatch, caplog):
+    from onec_ops.cli import main
+
+    platform = tmp_path / "1cv8"
+    platform.touch()
+    platform.chmod(0o755)
+    config_path = tmp_path / "config.toml"
+    config_path.write_text(f"platform = '{platform}'\n", encoding="utf-8")
+    monkeypatch.setattr("onec_ops.lib.config.user_config_dir", lambda name: str(tmp_path))
+    monkeypatch.setenv("DISPLAY", ":99")
+    with caplog.at_level("INFO"):
+        code = main(["--dry-run", "create-ib", "--type", "file", "--path", str(tmp_path / "ib")])
+    assert code == 0
+    assert f"{config_path} — найден" in caplog.text
+
+
+def test_help_shows_default_config_path(tmp_path, monkeypatch, capsys):
+    from onec_ops.cli import build_parser
+
+    monkeypatch.setattr("onec_ops.lib.config.user_config_dir", lambda name: str(tmp_path))
+    monkeypatch.setenv("COLUMNS", "500")
+    build_parser().print_help()
+    assert str(tmp_path / "config.toml") in capsys.readouterr().out

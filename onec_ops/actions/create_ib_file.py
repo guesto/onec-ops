@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from onec_ops.lib.exceptions import OneCOpsError
-from onec_ops.lib.runner import RunContext
+from onec_ops.lib.runner import RawArg, RunContext
 
 from .base import Action
 
@@ -80,7 +80,8 @@ class CreateIbFileAction(Action):
 
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
         """Собирает CREATEINFOBASE для файловой ИБ."""
-        return ["CREATEINFOBASE", f'File="{Path(ns.path).resolve()}"', "/DisableStartupMessages"]
+        connection = RawArg(f'File="{Path(ns.path).resolve()}"')
+        return ["CREATEINFOBASE", connection, "/DisableStartupMessages"]
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
         """Удаляет существующую ИБ и создаёт её каталог."""

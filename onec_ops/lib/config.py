@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import tomllib
@@ -11,13 +12,34 @@ from platformdirs import user_config_dir
 
 from .exceptions import OneCOpsError
 
+logger = logging.getLogger(__name__)
+
 _LINUX_PLATFORM = Path("/opt/1cv8/x86_64/8.5.1.1343/1cv8")
 _WINDOWS_PLATFORM = Path(r"C:\Program Files\1cv8\8.5.1.1343\bin\1cv8.exe")
 
 
+def default_config_path() -> Path:
+    r"""Путь к конфигу по умолчанию для текущей ОС.
+
+    Linux: ``~/.config/onec-ops/config.toml`` (или ``$XDG_CONFIG_HOME``).
+    Windows: ``%LOCALAPPDATA%\onec-ops\onec-ops\config.toml`` — platformdirs
+    повторяет имя приложения как имя автора.
+    """
+    return Path(user_config_dir("onec-ops")) / "config.toml"
+
+
+def describe_config(path: Path | None) -> str:
+    """Описывает, какой конфиг используется и найден ли он (для сообщений об ошибках)."""
+    config_path = path or default_config_path()
+    source = "--config" if path else "по умолчанию"
+    state = "найден" if config_path.is_file() else "не найден"
+    return f"Конфиг ({source}): {config_path} — {state}"
+
+
 def load_config(path: Path | None) -> dict:
     """Загружает TOML-конфиг или возвращает пустой словарь."""
-    config_path = path or Path(user_config_dir("onec-ops")) / "config.toml"
+    config_path = path or default_config_path()
+    logger.debug("Конфиг: %s", config_path)
     try:
         if not config_path.exists():
             return {}

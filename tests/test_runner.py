@@ -11,7 +11,15 @@ from pathlib import Path
 import pytest
 
 from onec_ops.lib.exceptions import OneCFailed, PlatformNotFound, XvfbNotAvailable
-from onec_ops.lib.runner import RunContext, _execute, build_command, run_1c, run_1c_popen
+from onec_ops.lib.runner import (
+    RawArg,
+    RunContext,
+    _execute,
+    build_command,
+    run_1c,
+    run_1c_popen,
+    windows_command_line,
+)
 
 
 def _platform(tmp_path: Path) -> Path:
@@ -452,3 +460,78 @@ def test_execute_kills_children_ignoring_sigterm(tmp_path, monkeypatch):
         _execute([str(script)], timeout=1)
     time.sleep(0.2)
     assert not _alive(_wait_pid_file(pid_file))
+
+
+def test_windows_command_line_keeps_raw_arg_quotes():
+    command = [
+        r"C:\Program Files\1cv8\bin\1cv8.exe",
+        "CREATEINFOBASE",
+        RawArg(r'File="C:\Базы\с пробелом"'),
+        "/Out",
+        r"C:\Temp\out file.txt",
+    ]
+
+    assert windows_command_line(command) == (
+        r'"C:\Program Files\1cv8\bin\1cv8.exe" CREATEINFOBASE File="C:\Базы\с пробелом" '
+        r'/Out "C:\Temp\out file.txt"'
+    )
+
+
+def test_windows_command_line_escapes_plain_quotes():
+    # Без RawArg кавычки экранируются как \" — именно так ломался create-ib.
+    assert windows_command_line(['File="C:\\ib"']) == r"File=\"C:\ib\""
+
+
+@pytest.mark.parametrize(("system", "as_string"), [("win32", True), ("linux", False)])
+def test_execute_passes_raw_arg_as_command_line_only_on_windows(
+    mocker, monkeypatch, system, as_string
+):
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", system)
+    process = mocker.MagicMock(returncode=0)
+    process.__enter__.return_value = process
+    process.communicate.return_value = ("", "")
+    popen = mocker.patch("onec_ops.lib.runner.subprocess.Popen", return_value=process)
+    command = ["1cv8", "CREATEINFOBASE", RawArg('File="C:\\ib"')]
+
+    _execute(command, timeout=10)
+
+    passed = popen.call_args.args[0]
+    if as_string:
+        assert passed == '1cv8 CREATEINFOBASE File="C:\\ib"'
+    else:
+        assert passed == command
+
+
+def test_execute_without_raw_arg_passes_list_on_windows(mocker, monkeypatch):
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    process = mocker.MagicMock(returncode=0)
+    process.__enter__.return_value = process
+    process.communicate.return_value = ("", "")
+    popen = mocker.patch("onec_ops.lib.runner.subprocess.Popen", return_value=process)
+
+    _execute(["1cv8", "DESIGNER", "/F", "C:\\a b"], timeout=10)
+
+    assert popen.call_args.args[0] == ["1cv8", "DESIGNER", "/F", "C:\\a b"]
+
+
+def test_popen_passes_raw_arg_as_command_line_on_windows(tmp_path, monkeypatch, mocker):
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    platform = _platform(tmp_path)
+    popen = mocker.patch("subprocess.Popen", return_value=mocker.Mock(pid=1))
+
+    run_1c_popen(["ENTERPRISE", RawArg('File="C:\\ib"')], RunContext(platform))
+
+    assert popen.call_args.args[0] == f'{platform} ENTERPRISE File="C:\\ib"'
+
+
+def test_run_1c_keeps_raw_arg_after_adding_out(tmp_path, monkeypatch, mocker):
+    monkeypatch.setattr("onec_ops.lib.runner.sys.platform", "win32")
+    execute = mocker.patch(
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
+
+    run_1c(["CREATEINFOBASE", RawArg('File="C:\\ib"')], RunContext(_platform(tmp_path)))
+
+    command = execute.call_args.args[0]
+    assert isinstance(command[2], RawArg)
+    assert "/Out" in command

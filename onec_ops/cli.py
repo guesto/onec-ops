@@ -12,8 +12,8 @@ from pathlib import Path
 from onec_ops import skill_install
 from onec_ops.actions import get_actions
 from onec_ops.actions.base import Action
-from onec_ops.lib.config import load_config, resolve_platform
-from onec_ops.lib.exceptions import OneCFailed, OneCOpsError
+from onec_ops.lib.config import default_config_path, describe_config, load_config, resolve_platform
+from onec_ops.lib.exceptions import OneCFailed, OneCOpsError, PlatformNotFound
 from onec_ops.lib.logging_setup import setup_logging
 from onec_ops.lib.platform_check import check_environment
 from onec_ops.lib.runner import RunContext, run_1c
@@ -34,7 +34,12 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
         "--log-level", choices=_LOG_LEVELS, default=argparse.SUPPRESS, help="Уровень логирования"
     )
     parser.add_argument("--log-file", type=Path, default=argparse.SUPPRESS, help="Файл журнала")
-    parser.add_argument("--config", type=Path, default=argparse.SUPPRESS, help="TOML-конфиг")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=argparse.SUPPRESS,
+        help=f"TOML-конфиг (по умолчанию {default_config_path()})",
+    )
     parser.add_argument(
         "--dry-run", action="store_true", default=argparse.SUPPRESS, help="Не запускать 1С"
     )
@@ -115,6 +120,8 @@ def main(argv: list[str] | None = None) -> int:
         if ns.action == skill_install.NAME:
             return skill_install.run(ns)
         config = load_config(ns.config)
+        if ns.dry_run:
+            logger.info("%s", describe_config(ns.config))
         action = next(item for item in get_actions() if item.name == ns.action)
         _resolve_ib_auth(ns, action)
         ctx = RunContext(
@@ -143,6 +150,9 @@ def main(argv: list[str] | None = None) -> int:
         finally:
             action.cleanup(ns)
         return 0
+    except PlatformNotFound as error:
+        logger.error("%s\n%s", error, describe_config(ns.config))
+        return 1
     except OneCOpsError as error:
         logger.error("%s", error)
         return 1
