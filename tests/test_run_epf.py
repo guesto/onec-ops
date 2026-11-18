@@ -33,6 +33,11 @@ def _record(stamp: str, severity: str, comment: str) -> str:
     )
 
 
+def _write_log(path: Path, records: str) -> None:
+    """Пишет журнал байтами: 1С хранит его с CRLF, текстовый режим Windows удвоил бы CR."""
+    path.write_bytes((LOG_HEADER + records).encode("utf-8"))
+
+
 def _out_file(command: list[str]) -> Path:
     return Path(command[command.index("/Out") + 1])
 
@@ -174,12 +179,11 @@ def test_timeout_adds_hint_and_log_errors(cli, ib, epf, mocker, caplog):
         stamp = datetime.now().astimezone().strftime("%Y%m%d%H%M%S")
         log = ib / "1Cv8Log"
         log.mkdir()
-        (log / "20261118000000.lgp").write_text(
-            LOG_HEADER
-            + _record("20200101000000", "E", "старая ошибка")
+        _write_log(
+            log / "20261118000000.lgp",
+            _record("20200101000000", "E", "старая ошибка")
             + _record(stamp, "I", "")
             + _record(stamp, "E", 'моя ошибка\r\n{Форма(4)}:ВызватьИсключение "моя ошибка";'),
-            encoding="utf-8",
         )
         raise subprocess.TimeoutExpired(command, 5)
 
@@ -227,7 +231,7 @@ def test_read_errors_skips_old_files(ib):
     log = ib / "1Cv8Log"
     log.mkdir()
     path = log / "old.lgp"
-    path.write_text(LOG_HEADER + _record("29991231000000", "E", "x"), encoding="utf-8")
+    _write_log(path, _record("29991231000000", "E", "x"))
     os.utime(path, (0, 0))
     assert read_errors(ib, datetime(2026, 1, 1, tzinfo=UTC)) == []
 
@@ -236,7 +240,7 @@ def test_read_errors_limit(ib):
     log = ib / "1Cv8Log"
     log.mkdir()
     records = "".join(_record("20260101000000", "E", f"ошибка {n}") for n in range(8))
-    (log / "a.lgp").write_text(LOG_HEADER + records, encoding="utf-8")
+    _write_log(log / "a.lgp", records)
     assert read_errors(ib, datetime(2025, 1, 1, tzinfo=UTC)) == [f"ошибка {n}" for n in range(3, 8)]
 
 
@@ -273,7 +277,7 @@ def test_without_user_fails_fast(platform, ib, epf, mocker, no_env, caplog):
     error = next(r.getMessage() for r in caplog.records if r.name == "onec_ops.cli")
     assert "Без --ib-user" in error
     assert str(platform.parent / "conf" / "conf.cfg") in error
-    assert suggested_line(ib) in error
+    assert suggested_line(ib.resolve()) in error
 
 
 def test_without_user_dry_run_warns(platform, ib, epf, mocker, no_env, caplog):
@@ -290,14 +294,14 @@ def test_without_user_skip_check(platform, ib, epf, mocker, no_env):
 
 
 def test_without_user_conf_disables(platform, ib, epf, mocker, no_env):
-    _write_conf(platform, "SystemLanguage=System\n" + suggested_line(ib) + "\n")
+    _write_conf(platform, "SystemLanguage=System\n" + suggested_line(ib.resolve()) + "\n")
     run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, "ok"))
     assert _main(platform, ib, "run-epf", "--epf", str(epf)) == 0
     assert run.called
 
 
 def test_timeout_reports_conf(platform, ib, epf, mocker, no_env, caplog):
-    conf = _write_conf(platform, suggested_line(ib) + "\n")
+    conf = _write_conf(platform, suggested_line(ib.resolve()) + "\n")
     mocker.patch("onec_ops.lib.runner._execute", side_effect=subprocess.TimeoutExpired(["1cv8"], 5))
     assert _main(platform, ib, "run-epf", "--epf", str(epf)) == 1
     error = next(r.getMessage() for r in caplog.records if r.name == "onec_ops.cli")
