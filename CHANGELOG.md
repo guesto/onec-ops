@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [0.9.5] — 2026-11-18
+
 ### Added
 
 - `install-skill --agent opencode`: `~/.config/opencode/skills/onec-ops`, в
