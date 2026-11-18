@@ -11,7 +11,7 @@
 - Конфигурация: [dump-config](#dump-config) · [load-config](#load-config) · [dump-cf](#dump-cf) · [load-cf](#load-cf) · [update-db](#update-db)
 - Проверка: [check-modules](#check-modules) · [check-config](#check-config)
 - Расширения: [list-extensions](#list-extensions) · [check-extension](#check-extension) · [delete-extension](#delete-extension)
-- Обработки и отчёты: [dump-epf](#dump-epf) · [load-epf](#load-epf)
+- Обработки и отчёты: [run-epf](#run-epf) · [dump-epf](#dump-epf) · [load-epf](#load-epf)
 - Хранилище: [repo-create](#repo-create) · [repo-bind](#repo-bind) · [repo-update](#repo-update) · [repo-add-user](#repo-add-user)
 - GUI: [open-designer](#open-designer) · [open-enterprise](#open-enterprise)
 - Навык: [install-skill](#install-skill)
@@ -67,8 +67,8 @@ platform = "/opt/1cv8/x86_64/8.3.25.1374/1cv8"
 | 2 | Ошибка аргументов (argparse): неизвестный или отсутствующий параметр |
 | 130 | Прервано пользователем (Ctrl+C) |
 
-Журнал пишется в stderr (и в `--log-file`). В stdout пишет только
-`list-extensions`. Пароли в журнале заменены на `***`.
+Журнал пишется в stderr (и в `--log-file`). В stdout пишут только
+`list-extensions` и `run-epf` (сообщения обработки). Пароли в журнале заменены на `***`.
 
 ## Пользователь ИБ
 
@@ -447,6 +447,64 @@ onec-ops open-enterprise --ib ./base1c
 onec-ops open-enterprise --ib ./base1c --no-wait
 onec-ops open-enterprise --ib ./base1c --execute ./task.epf --c "параметр"
 onec-ops --ib ./base1c --dry-run open-enterprise
+```
+
+## run-epf
+
+Выполняет внешнюю обработку в режиме 1С:Предприятие и ждёт завершения клиента.
+Для проверок данных, заполнения тестовых баз и прогона кода без окна.
+
+### Синтаксис
+
+```sh
+onec-ops run-epf --ib PATH --epf PATH [--param STRING] [--ib-user NAME] [--ib-password PWD] [--timeout SEC]
+```
+
+### Параметры
+
+```text
+--ib PATH               Файловая ИБ с 1Cv8.1CD (обязательный)
+--epf PATH              Обработка .epf (обязательный)
+--param STRING          Параметр запуска /C, в обработке — ПараметрЗапуска (синоним --c)
+--ib-user NAME          Пользователь ИБ (общий параметр)
+--ib-password PWD       Пароль пользователя ИБ (общий параметр)
+--timeout SEC           Таймаут, по умолчанию 120 с (у остальных команд 600)
+--skip-protection-check Не проверять conf.cfg при запуске без --ib-user
+```
+
+### Поведение
+
+1. Проверяет ИБ и файл `.epf`.
+2. Без `--ib-user` проверяет `DisableUnsafeActionProtection` в `conf.cfg`
+   платформы (каталог версии и общий каталог `1cv8`). Если защита для базы не
+   отключена, сразу завершается с кодом 1 и инструкцией: окно «Предупреждение
+   безопасности» неизбежно, ждать таймаута незачем. В `--dry-run` — только WARNING.
+   `--skip-protection-check` отключает проверку.
+3. Передаёт `ENTERPRISE /F <ib> [/N /P] /DisableStartupDialogs /DisableStartupMessages
+   /Execute <абсолютный путь> [/C <параметр>] /Out <временный файл>`.
+4. Окружение выбирается как у пакетных команд: Windows и Linux с `DISPLAY` —
+   напрямую (окно видно на экране), Linux без `DISPLAY` — `xvfb-run`.
+5. Ждёт, пока клиент завершится. Обработка должна сама вызвать
+   `ЗавершитьРаботуСистемы(Ложь)`, иначе команда завершится по таймауту.
+6. Сообщения 1С из `/Out` (в том числе `Сообщить()`) выводит в stdout. Код 1С
+   при этом всегда 0: успех или ошибку обработки сообщайте текстом.
+7. По таймауту — код 1, всё дерево процессов 1С завершено. В ошибке: сообщения
+   обработки, подсказка о возможных окнах и ошибки журнала регистрации базы
+   (`1Cv8Log/*.lgp`) с момента запуска. Журнал в формате SQLite (`.lgd`) не читается.
+
+Клиент без экрана не может ответить ни на одно окно:
+
+- «Предупреждение безопасности» при открытии обработки. Не появляется, если у
+  пользователя ИБ снят флажок «Защита от опасных действий» или защита для базы
+  отключена в `conf.cfg`. Как это сделать: [troubleshooting](troubleshooting.md#предупреждение-безопасности).
+- Окно ошибки при исключении в коде. Оборачивайте код в `Попытка`.
+
+### Примеры
+
+```sh
+onec-ops --ib ./test-ib --ib-user Тест run-epf --epf ./check.epf
+onec-ops --ib ./test-ib --ib-user Тест run-epf --epf ./fill.epf --param "2026-11-01" --timeout 600
+onec-ops --ib ./test-ib --dry-run run-epf --epf ./check.epf
 ```
 
 ## dump-epf

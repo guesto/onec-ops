@@ -43,7 +43,12 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dry-run", action="store_true", default=argparse.SUPPRESS, help="Не запускать 1С"
     )
-    parser.add_argument("--timeout", type=int, default=argparse.SUPPRESS, help="Таймаут в секундах")
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=argparse.SUPPRESS,
+        help="Таймаут в секундах (по умолчанию 600, у run-epf 120)",
+    )
 
 
 def _resolve_ib_auth(ns: argparse.Namespace, action: Action) -> None:
@@ -114,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     ns.config = getattr(ns, "config", None)
     ns.platform = getattr(ns, "platform", None)
     ns.dry_run = getattr(ns, "dry_run", False)
-    ns.timeout = getattr(ns, "timeout", 600)
+    ns.timeout = getattr(ns, "timeout", None)
     try:
         setup_logging(ns.log_level, ns.log_file)
         if ns.action == skill_install.NAME:
@@ -124,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
             logger.info("%s", describe_config(ns.config))
         action = next(item for item in get_actions() if item.name == ns.action)
         _resolve_ib_auth(ns, action)
+        if ns.timeout is None:
+            ns.timeout = action.default_timeout
         ctx = RunContext(
             platform_path=resolve_platform(ns.platform, config),
             log_file=ns.log_file,

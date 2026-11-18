@@ -35,6 +35,7 @@ ACTION_ARGS = {
     "check-config": [],
     "open-designer": [],
     "open-enterprise": [],
+    "run-epf": ["--epf", "a.epf"],
 }
 
 
