@@ -1004,8 +1004,9 @@ onec-ops install-skill [--agent AGENT ...] [--project DIR | --target DIR]
 ### Параметры
 
 ```text
---agent AGENT   claude, codex, kimi или agents (~/.agents). Можно повторять
+--agent AGENT   claude, codex, kimi, opencode или agents (~/.agents). Можно повторять
 --project DIR   Установить в проект: DIR/.claude/skills/onec-ops и т. п.
+                (opencode — DIR/.opencode/skills/onec-ops)
 --target DIR    Явный каталог навыка
 --check         Только проверить копии, ничего не менять
 --dry-run       Показать, куда будет установлено
@@ -1014,8 +1015,8 @@ onec-ops install-skill [--agent AGENT ...] [--project DIR | --target DIR]
 ### Поведение
 
 1. Без `--agent` выбирает агентов, чьи каталоги уже есть: `~/.claude`,
-   `~/.codex`, `~/.kimi-code`, `~/.agents`. С `--project` — те же каталоги в
-   проекте. Не нашлось ни одного — ошибка с подсказкой про `--agent`.
+   `~/.codex`, `~/.kimi-code`, `~/.config/opencode`, `~/.agents`. С `--project` —
+   те же каталоги в проекте, для opencode — `.opencode`. Не нашлось ни одного — ошибка с подсказкой про `--agent`.
 2. Домашние каталоги берутся из `CLAUDE_CONFIG_DIR`, `CODEX_HOME`,
    `KIMI_CODE_HOME`, если они заданы.
 3. Заменяет только `SKILL.md`, `references/` и `agents/`; другие файлы в
@@ -1026,7 +1027,8 @@ onec-ops install-skill [--agent AGENT ...] [--project DIR | --target DIR]
 5. `--check` печатает «актуально», «устарело», «не установлен» или «ссылки на
    репозиторий» для каждого каталога. Код возврата 1, если есть устаревшие или
    неустановленные копии.
-6. После обновления перезапустите Codex; в Kimi Code — `/reload`.
+6. После обновления перезапустите Codex; в Kimi Code — `/reload`; opencode
+   лучше перезапустить (документация не говорит, подхватывает ли он навыки на ходу).
 
 ```sh
 onec-ops install-skill

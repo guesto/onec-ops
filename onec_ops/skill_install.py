@@ -24,8 +24,12 @@ AGENTS: dict[str, tuple[str | None, str]] = {
     "claude": ("CLAUDE_CONFIG_DIR", ".claude"),
     "codex": ("CODEX_HOME", ".codex"),
     "kimi": ("KIMI_CODE_HOME", ".kimi-code"),
+    "opencode": (None, ".config/opencode"),
     "agents": (None, ".agents"),
 }
+
+# Каталог агента внутри проекта, если он не совпадает с каталогом в HOME.
+PROJECT_DIRS: dict[str, str] = {"opencode": ".opencode"}
 
 _NAME_LINE = re.compile(r'^name:\s*"?([^"\n]+?)"?\s*$', re.MULTILINE)
 
@@ -52,7 +56,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "--agent",
         action="append",
         choices=sorted(AGENTS),
-        help="Агент: claude, codex, kimi, agents (~/.agents). Можно повторять",
+        help="Агент: claude, codex, kimi, opencode, agents (~/.agents). Можно повторять",
     )
     place = parser.add_mutually_exclusive_group()
     place.add_argument(
@@ -92,7 +96,7 @@ def resolve_targets(ns: argparse.Namespace) -> list[Target]:
         project = ns.project.expanduser().resolve()
         if not project.is_dir():
             raise OneCOpsError(f"Каталог проекта не найден: {project}")
-        homes = {agent: project / AGENTS[agent][1] for agent in AGENTS}
+        homes = {agent: project / PROJECT_DIRS.get(agent, AGENTS[agent][1]) for agent in AGENTS}
     else:
         homes = {agent: _agent_home(agent) for agent in AGENTS}
     agents = list(dict.fromkeys(ns.agent or []))
@@ -101,8 +105,8 @@ def resolve_targets(ns: argparse.Namespace) -> list[Target]:
         if not agents:
             where = "в проекте" if ns.project is not None else "в домашнем каталоге"
             raise OneCOpsError(
-                f"Каталоги агентов {where} не найдены. Укажите --agent claude, codex, kimi "
-                "или agents."
+                f"Каталоги агентов {where} не найдены. Укажите --agent claude, codex, kimi, "
+                "opencode или agents."
             )
     return [Target(agent, homes[agent] / "skills" / SKILL_NAME) for agent in agents]
 

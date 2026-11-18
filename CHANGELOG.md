@@ -7,6 +7,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- `install-skill --agent opencode`: `~/.config/opencode/skills/onec-ops`, в
+  проекте — `.opencode/skills/onec-ops`; opencode определяется по наличию
+  `~/.config/opencode`.
+- README: раздел «opencode», агент в списках поддерживаемых.
+- README и troubleshooting: переход со старой установки из GitHub
+  (`No module named 'scripts'`) и `pipx ensurepath`, если `onec-ops` не в PATH.
+
 ## [0.9.4] — 2026-11-18
 
 ### Fixed
