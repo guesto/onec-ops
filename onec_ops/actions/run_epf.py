@@ -13,6 +13,7 @@ from pathlib import Path
 from onec_ops.lib.eventlog import read_errors
 from onec_ops.lib.exceptions import OneCFailed, OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.unsafe_protection import conf_files, disabled_by, suggested_line
 
 from .base import Action
 
@@ -21,13 +22,27 @@ logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 120
 _HANG_HINT = (
     "Клиент 1С, скорее всего, ждёт ответа в окне. Частые причины:\n"
-    "- окно «Предупреждение безопасности» при открытии обработки: у пользователя ИБ "
-    "включена защита от опасных действий (её отключает администратор базы в "
-    "Конфигураторе: Администрирование → Пользователи → снять флажок «Защита от "
-    "опасных действий»; в базе без пользователей защита включена всегда);\n"
     "- исключение в коде обработки: 1С показывает окно ошибки;\n"
-    "- обработка не вызывает ЗавершитьРаботуСистемы(Ложь) и остаётся открытой."
+    "- обработка не вызывает ЗавершитьРаботуСистемы(Ложь) и остаётся открытой;\n"
+    "- окно «Предупреждение безопасности» при открытии обработки."
 )
+
+
+def _protection_hint(ib: Path, platform_path: Path) -> str:
+    """Объясняет, отключена ли защита от опасных действий для базы и как её отключить."""
+    conf = disabled_by(ib, platform_path)
+    if conf is not None:
+        return f"Защита от опасных действий для этой базы отключена в {conf}."
+    return (
+        "Окно «Предупреждение безопасности» убирает человек одним из способов:\n"
+        "1) у пользователя ИБ снять флажок «Защита от опасных действий» (Конфигуратор → "
+        "Администрирование → Пользователи) и запускать с --ib-user; в базе без "
+        "пользователей защита включена всегда;\n"
+        f"2) администратор компьютера добавляет в {conf_files(platform_path)[0]} строку\n"
+        f"   {suggested_line(ib)}\n"
+        "   Только для тестовых баз. Подробно: references/troubleshooting.md, "
+        "«Предупреждение безопасности»."
+    )
 
 
 class RunEpfAction(Action):
@@ -53,6 +68,11 @@ class RunEpfAction(Action):
             dest="param",
             help="Параметр запуска (/C), в обработке — ПараметрЗапуска",
         )
+        parser.add_argument(
+            "--skip-protection-check",
+            action="store_true",
+            help="Запускать без --ib-user, даже если conf.cfg не отключает защиту",
+        )
 
     def validate(self, ns: argparse.Namespace) -> None:
         """Проверяет ИБ и файл обработки."""
@@ -64,14 +84,35 @@ class RunEpfAction(Action):
             raise OneCOpsError(f"--epf должен быть файлом .epf: {epf}")
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
-        """Готовит файл /Out и запоминает время запуска для журнала регистрации."""
+        """Проверяет защиту от опасных действий, готовит /Out и запоминает время запуска."""
         ns.started_at = datetime.now().astimezone()
         ns.out_file = None
+        self._check_protection(ns, ctx)
         if ctx.dry_run:
             return
         fd, name = tempfile.mkstemp(prefix="onec-ops-out-", suffix=".txt")
         os.close(fd)
         ns.out_file = Path(name)
+
+    def _check_protection(self, ns: argparse.Namespace, ctx: RunContext) -> None:
+        """Без пользователя ИБ окно безопасности неизбежно, если conf.cfg его не отключает.
+
+        В базе без пользователей защита включена всегда, а в базе с пользователями
+        запуск без /N сразу завершится ошибкой 1С. Поэтому без --ib-user ждать
+        таймаута незачем.
+        """
+        if getattr(ns, "ib_user", None) or getattr(ns, "skip_protection_check", False):
+            return
+        if disabled_by(Path(ns.ib), ctx.platform_path) is not None:
+            return
+        message = (
+            "Без --ib-user 1С покажет окно «Предупреждение безопасности», и клиент без "
+            "экрана зависнет.\n" + _protection_hint(Path(ns.ib), ctx.platform_path)
+        )
+        if ctx.dry_run:
+            logger.warning("%s", message)
+            return
+        raise OneCOpsError(message)
 
     def build_1c_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
         """Собирает команду ENTERPRISE с /Execute и /Out."""
@@ -96,6 +137,7 @@ class RunEpfAction(Action):
         parts = [str(error)]
         if error.returncode == -1 and "не завершилась" in str(error):
             parts.append(_HANG_HINT)
+            parts.append(_protection_hint(Path(ns.ib), ctx.platform_path))
         started_at = getattr(ns, "started_at", None)
         if started_at is not None:
             log_errors = read_errors(Path(ns.ib), started_at)

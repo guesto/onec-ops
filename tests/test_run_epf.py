@@ -14,6 +14,13 @@ from onec_ops.cli import build_parser, main
 from onec_ops.lib.eventlog import read_errors
 from onec_ops.lib.exceptions import OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.unsafe_protection import (
+    conf_files,
+    connection_string,
+    disabled_by,
+    read_patterns,
+    suggested_line,
+)
 
 LOG_HEADER = "﻿1CV8LOG(ver 2.0)\r\n5583aacc-8ee0-40ea-8329-8fbf88013454\r\n\r\n"
 
@@ -137,19 +144,19 @@ def test_success_prints_messages(cli, epf, mocker, capsys):
 
 def test_success_without_messages(cli, epf, mocker, capsys):
     mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
-    assert cli("run-epf", "--epf", str(epf)) == 0
+    assert cli("--ib-user", "Тест", "run-epf", "--epf", str(epf)) == 0
     assert capsys.readouterr().out == ""
 
 
 def test_default_timeout_is_short(cli, epf, mocker):
     run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
-    cli("run-epf", "--epf", str(epf))
+    cli("--ib-user", "Тест", "run-epf", "--epf", str(epf))
     assert run.call_args.kwargs["timeout"] == 120
 
 
 def test_explicit_timeout(cli, epf, mocker):
     run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
-    cli("--timeout", "30", "run-epf", "--epf", str(epf))
+    cli("--ib-user", "Тест", "--timeout", "30", "run-epf", "--epf", str(epf))
     assert run.call_args.kwargs["timeout"] == 30
 
 
@@ -178,11 +185,12 @@ def test_timeout_adds_hint_and_log_errors(cli, ib, epf, mocker, caplog):
 
     mocker.patch("onec_ops.lib.runner._execute", side_effect=hang)
 
-    assert cli("--timeout", "5", "run-epf", "--epf", str(epf)) == 1
+    assert cli("--ib-user", "Тест", "--timeout", "5", "run-epf", "--epf", str(epf)) == 1
     error = next(r.getMessage() for r in caplog.records if r.name == "onec_ops.cli")
     assert "не завершилась за 5 секунд" in error
     assert "до ошибки" in error
     assert "Предупреждение безопасности" in error
+    assert "DisableUnsafeActionProtection=" in error
     assert "ЗавершитьРаботуСистемы(Ложь)" in error
     assert 'моя ошибка\n{Форма(4)}:ВызватьИсключение "моя ошибка";' in error
     assert "старая ошибка" not in error
@@ -193,20 +201,20 @@ def test_nonzero_code_without_hang_hint(cli, epf, mocker, caplog):
         "onec_ops.lib.runner._execute",
         side_effect=_fake_run(1, "Пользователь ИБ не идентифицирован"),
     )
-    assert cli("run-epf", "--epf", str(epf)) == 1
+    assert cli("--ib-user", "Тест", "run-epf", "--epf", str(epf)) == 1
     error = next(r.getMessage() for r in caplog.records if r.name == "onec_ops.cli")
     assert error == "1С завершилась с ненулевым кодом: 1\nПользователь ИБ не идентифицирован"
 
 
 def test_out_file_removed_after_failure(cli, epf, mocker):
     run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(1, "x"))
-    cli("run-epf", "--epf", str(epf))
+    cli("--ib-user", "Тест", "run-epf", "--epf", str(epf))
     assert not _out_file(run.call_args.args[0]).exists()
 
 
 def test_dry_run_does_not_start(cli, epf, mocker, capsys):
     run = mocker.patch("onec_ops.lib.runner._execute")
-    assert cli("--dry-run", "run-epf", "--epf", str(epf)) == 0
+    assert cli("--ib-user", "Тест", "--dry-run", "run-epf", "--epf", str(epf)) == 0
     run.assert_not_called()
     assert capsys.readouterr().out == ""
 
@@ -230,3 +238,108 @@ def test_read_errors_limit(ib):
     records = "".join(_record("20260101000000", "E", f"ошибка {n}") for n in range(8))
     (log / "a.lgp").write_text(LOG_HEADER + records, encoding="utf-8")
     assert read_errors(ib, datetime(2025, 1, 1, tzinfo=UTC)) == [f"ошибка {n}" for n in range(3, 8)]
+
+
+@pytest.fixture
+def platform(tmp_path):
+    path = tmp_path / "1cv8" / "x86_64" / "8.5.1.1343" / "1cv8"
+    path.parent.mkdir(parents=True)
+    path.touch()
+    path.chmod(0o755)
+    return path
+
+
+def _write_conf(platform, text):
+    conf = platform.parent / "conf" / "conf.cfg"
+    conf.parent.mkdir(exist_ok=True)
+    conf.write_text(text, encoding="utf-8")
+    return conf
+
+
+def _main(platform, ib, *argv):
+    return main(["--platform", str(platform), "--ib", str(ib), *argv])
+
+
+@pytest.fixture
+def no_env(mocker):
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+
+
+def test_without_user_fails_fast(platform, ib, epf, mocker, no_env, caplog):
+    run = mocker.patch("onec_ops.lib.runner._execute")
+    assert _main(platform, ib, "run-epf", "--epf", str(epf)) == 1
+    run.assert_not_called()
+    error = next(r.getMessage() for r in caplog.records if r.name == "onec_ops.cli")
+    assert "Без --ib-user" in error
+    assert str(platform.parent / "conf" / "conf.cfg") in error
+    assert suggested_line(ib) in error
+
+
+def test_without_user_dry_run_warns(platform, ib, epf, mocker, no_env, caplog):
+    assert _main(platform, ib, "--dry-run", "run-epf", "--epf", str(epf)) == 0
+    assert any(
+        r.levelname == "WARNING" and "Без --ib-user" in r.getMessage() for r in caplog.records
+    )
+
+
+def test_without_user_skip_check(platform, ib, epf, mocker, no_env):
+    run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, ""))
+    assert _main(platform, ib, "run-epf", "--epf", str(epf), "--skip-protection-check") == 0
+    assert "/N" not in run.call_args.args[0]
+
+
+def test_without_user_conf_disables(platform, ib, epf, mocker, no_env):
+    _write_conf(platform, "SystemLanguage=System\n" + suggested_line(ib) + "\n")
+    run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, "ok"))
+    assert _main(platform, ib, "run-epf", "--epf", str(epf)) == 0
+    assert run.called
+
+
+def test_timeout_reports_conf(platform, ib, epf, mocker, no_env, caplog):
+    conf = _write_conf(platform, suggested_line(ib) + "\n")
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=subprocess.TimeoutExpired(["1cv8"], 5))
+    assert _main(platform, ib, "run-epf", "--epf", str(epf)) == 1
+    error = next(r.getMessage() for r in caplog.records if r.name == "onec_ops.cli")
+    assert f"отключена в {conf}" in error
+
+
+def test_conf_files(platform):
+    assert conf_files(platform) == [
+        platform.parent / "conf" / "conf.cfg",
+        platform.parents[2] / "conf" / "conf.cfg",
+    ]
+
+
+def test_conf_files_short_path():
+    assert conf_files(Path("1cv8")) == [Path("conf") / "conf.cfg"]
+
+
+def test_read_patterns(tmp_path):
+    conf = tmp_path / "conf.cfg"
+    conf.write_text(
+        "SystemLanguage=System\ndisableunsafeactionprotection= .*a.* ; .*b.*;\n",
+        encoding="utf-8",
+    )
+    assert read_patterns([conf, tmp_path / "missing.cfg"]) == [(conf, ".*a.*"), (conf, ".*b.*")]
+
+
+def test_suggested_line_matches_only_this_base(tmp_path):
+    ib = tmp_path / "a b (т)" / "ib.1"
+    pattern = suggested_line(ib).split("=", 1)[1]
+    assert pattern.endswith("\\W.*")
+    import re
+
+    assert re.fullmatch(pattern, connection_string(ib))
+    assert not re.fullmatch(pattern, connection_string(tmp_path / "a b (т)" / "ib.12"))
+    assert not re.fullmatch(pattern, connection_string(tmp_path / "a b (т)" / "ib_1"))
+
+
+def test_disabled_by_fullmatch_and_bad_pattern(platform, tmp_path):
+    ib = tmp_path / "ib"
+    conf = _write_conf(platform, f"DisableUnsafeActionProtection=([;.*{ib}")
+    assert disabled_by(ib, platform) is None
+    conf.write_text(f"DisableUnsafeActionProtection=.*{ib}", encoding="utf-8")
+    assert disabled_by(ib, platform) is None
+    conf.write_text("DisableUnsafeActionProtection=.*", encoding="utf-8")
+    assert disabled_by(ib, platform) == conf
