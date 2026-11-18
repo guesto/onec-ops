@@ -101,6 +101,27 @@ def test_project_install(home, tmp_path, no_platform):
     assert not (home / ".codex" / "skills").exists()
 
 
+def test_opencode_home_install(home, no_platform):
+    assert main(["install-skill", "--agent", "opencode"]) == 0
+    assert (_skill(home / ".config" / "opencode") / "SKILL.md").is_file()
+
+
+def test_opencode_detected_by_config_dir(home, no_platform):
+    (home / ".config" / "opencode").mkdir(parents=True)
+    assert main(["install-skill"]) == 0
+    assert (_skill(home / ".config" / "opencode") / "SKILL.md").is_file()
+
+
+def test_opencode_project_uses_dot_opencode(home, tmp_path, no_platform):
+    project = tmp_path / "project"
+    (project / ".opencode").mkdir(parents=True)
+
+    assert main(["install-skill", "--project", str(project)]) == 0
+
+    assert (_skill(project / ".opencode") / "SKILL.md").is_file()
+    assert not (project / ".config").exists()
+
+
 def test_project_missing(tmp_path, no_platform):
     assert main(["install-skill", "--project", str(tmp_path / "nope"), "--agent", "claude"]) == 1
 

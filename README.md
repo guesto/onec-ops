@@ -7,7 +7,7 @@
 
 CLI-утилита и Agent Skill для автоматизации пакетных операций 
 1С:Предприятие. Работает как для человека в терминале, так и для 
-ИИ-агентов (Codex, Claude Code, Kimi Code).
+ИИ-агентов (Codex, Claude Code, Kimi Code, opencode).
 
 ## Статус
 
@@ -57,6 +57,17 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 Версия из `main`, ещё не выпущенная в PyPI:
 
     pipx install --force git+https://github.com/guesto/onec-ops.git
+
+Если пакет раньше ставился из GitHub (до v0.9.3), `pipx upgrade` остаётся на
+старом источнике, и `onec-ops` падает с `No module named 'scripts'`.
+Переустановите из PyPI:
+
+    pipx uninstall onec-ops
+    pipx install onec-ops
+
+Если `onec-ops` не находится, а `pipx` работает, каталог программ pipx не
+прописан в PATH: выполните `pipx ensurepath` и откройте терминал заново.
+Запуск через `python3 onec-ops` не работает.
 
 После установки или обновления поставьте навык агентам (см. «Agent Skill»):
 
@@ -340,7 +351,7 @@ Dry-run проверяет ИБ и пути, показывает команду
 
 ## Agent Skill
 
-Навык учит агента (Claude Code, Codex, Kimi Code) пользоваться `onec-ops`:
+Навык учит агента (Claude Code, Codex, Kimi Code, opencode) пользоваться `onec-ops`:
 какую команду выбрать, какие команды разрушают данные, как читать ошибки 1С.
 Навык входит в пакет `onec-ops` и ставится командой `install-skill`.
 
@@ -371,7 +382,8 @@ Dry-run проверяет ИБ и пути, показывает команду
 
 Команда копирует навык из установленного пакета каждому агенту, чей каталог
 уже есть: `~/.claude/skills/onec-ops`, `~/.codex/skills/onec-ops`,
-`~/.kimi-code/skills/onec-ops`, `~/.agents/skills/onec-ops`. Каталоги берутся
+`~/.kimi-code/skills/onec-ops`, `~/.config/opencode/skills/onec-ops`,
+`~/.agents/skills/onec-ops`. Каталоги берутся
 из `CLAUDE_CONFIG_DIR`, `CODEX_HOME` и `KIMI_CODE_HOME`, если они заданы.
 Выбрать агентов явно, поставить в проект или в свой каталог:
 
@@ -412,6 +424,21 @@ frontmatter `name` и `description`, в onec-ops оба поля есть. Ра�
 через симлинки не проверялась — ставьте копию. Изменения в каталогах
 навыков подхватываются командой `/reload`, без перезапуска.
 
+### opencode
+
+opencode берёт навыки из `~/.config/opencode/skills/` (на Windows —
+`%USERPROFILE%\.config\opencode\skills\`), а также из общих `~/.claude/skills/`
+и `~/.agents/skills/`:
+
+    onec-ops install-skill --agent opencode
+
+Для одного проекта — `onec-ops install-skill --project . --agent opencode`, копия
+ляжет в `.opencode/skills/onec-ops/`. Идентификатор навыка — имя каталога,
+`onec-ops`; модель видит навык по полю `description`. Навык вызывается
+инструментом `skill` сам или по упоминанию `@onec-ops` в запросе. Проверено
+пользователем на Windows 10 с моделью DeepSeek и 1С 8.5.1.1522:
+`load-config`, `load-epf`, `dump-epf`, `create-ib`, `dump-config`.
+
 ### Обновление копий
 
 Копии не обновляются сами. После `pipx upgrade onec-ops` повторите:
@@ -429,7 +456,7 @@ frontmatter `name` и `description`, в onec-ops оба поля есть. Ра�
 
 В новом чате агента спросите «какие навыки ты видишь?» — в списке
 должен быть `onec-ops`. В Kimi Code навык также вызывается напрямую
-командой `/skill:onec-ops`. Затем дайте задачу, например «выгрузи
+командой `/skill:onec-ops`, в opencode — упоминанием `@onec-ops`. Затем дайте задачу, например «выгрузи
 конфигурацию базы ./base в .cf»: агент должен выбрать навык и предложить
 `onec-ops --ib ./base dump-cf --to ./base.cf`.
 
