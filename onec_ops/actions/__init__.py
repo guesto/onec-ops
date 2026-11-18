@@ -22,6 +22,7 @@ from .repo_bind import RepoBindAction
 from .repo_create import RepoCreateAction
 from .repo_update import RepoUpdateAction
 from .restore_dt import RestoreDtAction
+from .run_epf import RunEpfAction
 from .update_db import UpdateDbAction
 
 
@@ -35,6 +36,7 @@ def get_actions() -> list[Action]:
         LoadCfAction(),
         OpenDesignerAction(),
         OpenEnterpriseAction(),
+        RunEpfAction(),
         DumpEpfAction(),
         LoadEpfAction(),
         DumpDtAction(),

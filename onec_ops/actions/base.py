@@ -24,6 +24,8 @@ class Action(ABC):
     requires_gui: bool = False
     """Требуется ли реальный DISPLAY (не Xvfb)."""
     path_args: tuple[str, ...] = ()
+    default_timeout: int = 600
+    """Таймаут в секундах, если --timeout не задан."""
     legacy_ib_auth_options: bool = False
     """Принимает ли действие устаревшие --user / --password для пользователя ИБ."""
 
