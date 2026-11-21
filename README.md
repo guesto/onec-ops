@@ -332,12 +332,14 @@ Dry-run проверяет ИБ и пути, показывает команду
 не запускает 1С. Для `repo-create` он создаёт только каталог: для последующего
 `repo-bind` нужно уже существующее непустое хранилище.
 Вместо каталога `--storage` принимает адрес сервера хранилища (`crserver`)
-`tcp://сервер[:порт]/имя_хранилища` или веб-публикации `http://` / `https://`.
+`tcp://сервер[:порт]/имя_хранилища` или веб-публикации `http://` / `https://`
+(например, `http://localhost/storage/repo.1ccr/имя_хранилища`).
 Адрес передаётся в `/ConfigurationRepositoryF` без изменений и проверяется
 только на форму (сервер и имя хранилища); проверки каталога для него не выполняются.
 
     onec-ops repo-create --ib /path/to/ib --storage tcp://localhost:1542/main
     onec-ops repo-bind --ib /path/to/other-ib --storage tcp://localhost:1542/main --storage-user Разработчик2
+    onec-ops repo-update --ib /path/to/other-ib --storage http://localhost/storage/repo.1ccr/main --storage-user Разработчик2
 
 Подробнее: [справочник команд](references/commands.md#repo-create).
 

@@ -750,7 +750,8 @@ onec-ops --ib ./base1c --dry-run repo-create --storage ./storage1c
 
 Все команды `repo-*` принимают в `--storage` адрес сервера хранилища вместо каталога:
 `tcp://сервер[:порт]/имя` (`crserver`, порт по умолчанию 1542) или
-`http://` / `https://` (веб-публикация хранилища). Адрес передаётся в
+`http://` / `https://` (веб-публикация хранилища, вида
+`http://сервер/путь/repo.1ccr/имя`). Адрес передаётся в
 `/ConfigurationRepositoryF` как есть. onec-ops проверяет только, что в адресе есть
 сервер и имя хранилища; проверки каталога (существование, пустота, права,
 создание в `repo-create`) для адреса не выполняются. Несуществующее хранилище,
@@ -761,6 +762,8 @@ onec-ops repo-create --ib ./base1c --storage tcp://localhost:1542/main --passwor
 onec-ops repo-add-user --ib ./base1c --storage tcp://localhost:1542/main \
     --storage-user Администратор --storage-password secret --user dev --rights LockObjects
 onec-ops repo-bind --ib ./base2c --storage tcp://localhost:1542/main \
+    --storage-user dev --storage-password devpw
+onec-ops repo-update --ib ./base2c --storage http://localhost/storage/repo.1ccr/main \
     --storage-user dev --storage-password devpw
 ```
 
