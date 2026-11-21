@@ -24,6 +24,7 @@
 --ib PATH               Файловая ИБ с 1Cv8.1CD (для всех команд, кроме create-ib)
 --ib-user NAME          Пользователь ИБ (/N), см. «Пользователь ИБ»
 --ib-password PWD       Пароль пользователя ИБ (/P)
+--os-auth               Аутентификация ОС (/WA+), экспериментально
 --platform PATH         Путь к 1cv8
 --config PATH           TOML-конфиг (по умолчанию — см. «Конфиг» ниже)
 --log-level LEVEL       DEBUG / INFO / WARNING / ERROR (по умолчанию INFO)
@@ -94,6 +95,29 @@ platform = "/opt/1cv8/x86_64/8.3.25.1374/1cv8"
 ```sh
 onec-ops --ib ./base --ib-user Пользователь --ib-password secret dump-cf --to ./base.cf
 ONEC_OPS_IB_USER=Пользователь ONEC_OPS_IB_PASSWORD=secret onec-ops --ib ./base dump-config --to ./xml
+```
+
+### Аутентификация ОС
+
+> **Экспериментально.** Вживую не проверено ни на Windows с доменом, ни на
+> Linux (там нужен Kerberos). Без `--os-auth` поведение команд не меняется.
+
+```text
+--os-auth               Вход по учётной записи ОС (/WA+), без /N и /P
+```
+
+Для пользователя ИБ с флажком «Аутентификация операционной системы» и
+указанной учётной записью ОС (Windows: `\\ДОМЕН\Пользователь` или
+`\\КОМПЬЮТЕР\Пользователь`). Ключ `/WA+` вставляется сразу после `/F <ib>`.
+`--os-auth` нельзя сочетать с `--ib-user` / `--ib-password` (и устаревшими
+`--user` / `--password` GUI-команд), переменные `ONEC_OPS_IB_USER` /
+`ONEC_OPS_IB_PASSWORD` при нём не используются. Для `create-ib` запрещён.
+Если учётная запись ОС не сопоставлена пользователю ИБ, 1С отвечает
+«Пользователь ИБ не идентифицирован». На Linux аутентификация ОС требует
+отдельной настройки платформы (Kerberos) и в onec-ops не проверялась.
+
+```sh
+onec-ops --ib ./base --os-auth dump-cf --to ./base.cf
 ```
 
 ## create-ib
@@ -457,7 +481,7 @@ onec-ops --ib ./base1c --dry-run open-enterprise
 ### Синтаксис
 
 ```sh
-onec-ops run-epf --ib PATH --epf PATH [--param STRING] [--ib-user NAME] [--ib-password PWD] [--timeout SEC]
+onec-ops run-epf --ib PATH --epf PATH [--param STRING] [--ib-user NAME] [--ib-password PWD] [--os-auth] [--timeout SEC]
 ```
 
 ### Параметры
@@ -468,19 +492,20 @@ onec-ops run-epf --ib PATH --epf PATH [--param STRING] [--ib-user NAME] [--ib-pa
 --param STRING          Параметр запуска /C, в обработке — ПараметрЗапуска (синоним --c)
 --ib-user NAME          Пользователь ИБ (общий параметр)
 --ib-password PWD       Пароль пользователя ИБ (общий параметр)
+--os-auth               Аутентификация ОС (общий параметр)
 --timeout SEC           Таймаут, по умолчанию 120 с (у остальных команд 600)
---skip-protection-check Не проверять conf.cfg при запуске без --ib-user
+--skip-protection-check Не проверять conf.cfg при запуске без --ib-user / --os-auth
 ```
 
 ### Поведение
 
 1. Проверяет ИБ и файл `.epf`.
-2. Без `--ib-user` проверяет `DisableUnsafeActionProtection` в `conf.cfg`
+2. Без `--ib-user` и `--os-auth` проверяет `DisableUnsafeActionProtection` в `conf.cfg`
    платформы (каталог версии и общий каталог `1cv8`). Если защита для базы не
    отключена, сразу завершается с кодом 1 и инструкцией: окно «Предупреждение
    безопасности» неизбежно, ждать таймаута незачем. В `--dry-run` — только WARNING.
    `--skip-protection-check` отключает проверку.
-3. Передаёт `ENTERPRISE /F <ib> [/N /P] /DisableStartupDialogs /DisableStartupMessages
+3. Передаёт `ENTERPRISE /F <ib> [/N /P | /WA+] /DisableStartupDialogs /DisableStartupMessages
    /Execute <абсолютный путь> [/C <параметр>] /Out <временный файл>`.
 4. Окружение выбирается как у пакетных команд: Windows и Linux с `DISPLAY` —
    напрямую (окно видно на экране), Linux без `DISPLAY` — `xvfb-run`.

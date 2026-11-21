@@ -36,7 +36,8 @@ def _protection_hint(ib: Path, platform_path: Path) -> str:
     return (
         "Окно «Предупреждение безопасности» убирает человек одним из способов:\n"
         "1) у пользователя ИБ снять флажок «Защита от опасных действий» (Конфигуратор → "
-        "Администрирование → Пользователи) и запускать с --ib-user; в базе без "
+        "Администрирование → Пользователи) и запускать с --ib-user или, если "
+        "пользователь входит через аутентификацию ОС, с --os-auth; в базе без "
         "пользователей защита включена всегда;\n"
         f"2) администратор компьютера добавляет в {conf_files(platform_path)[0]} строку\n"
         f"   {suggested_line(ib)}\n"
@@ -71,7 +72,7 @@ class RunEpfAction(Action):
         parser.add_argument(
             "--skip-protection-check",
             action="store_true",
-            help="Запускать без --ib-user, даже если conf.cfg не отключает защиту",
+            help="Запускать без --ib-user / --os-auth, даже если conf.cfg не отключает защиту",
         )
 
     def validate(self, ns: argparse.Namespace) -> None:
@@ -99,14 +100,19 @@ class RunEpfAction(Action):
 
         В базе без пользователей защита включена всегда, а в базе с пользователями
         запуск без /N сразу завершится ошибкой 1С. Поэтому без --ib-user ждать
-        таймаута незачем.
+        таймаута незачем. --os-auth тоже называет пользователя ИБ (по учётной
+        записи ОС): флажок защиты проверить заранее нельзя, как и для --ib-user.
         """
-        if getattr(ns, "ib_user", None) or getattr(ns, "skip_protection_check", False):
+        if (
+            getattr(ns, "ib_user", None)
+            or getattr(ns, "os_auth", False)
+            or getattr(ns, "skip_protection_check", False)
+        ):
             return
         if disabled_by(Path(ns.ib), ctx.platform_path) is not None:
             return
         message = (
-            "Без --ib-user 1С покажет окно «Предупреждение безопасности», и клиент без "
+            "Без --ib-user и --os-auth 1С покажет окно «Предупреждение безопасности», и клиент без "
             "экрана зависнет.\n" + _protection_hint(Path(ns.ib), ctx.platform_path)
         )
         if ctx.dry_run:

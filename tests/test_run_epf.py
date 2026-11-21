@@ -293,6 +293,22 @@ def test_without_user_skip_check(platform, ib, epf, mocker, no_env):
     assert "/N" not in run.call_args.args[0]
 
 
+def test_os_auth_skips_protection_check(platform, ib, epf, mocker, no_env):
+    run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, "ok"))
+    assert _main(platform, ib, "--os-auth", "run-epf", "--epf", str(epf)) == 0
+    command = run.call_args.args[0]
+    index = command.index("/F")
+    assert command[index + 2] == "/WA+"
+    assert "/N" not in command
+
+
+def test_os_auth_timeout_hint_mentions_os_auth(platform, ib, epf, mocker, no_env, caplog):
+    mocker.patch("onec_ops.lib.runner._execute", side_effect=subprocess.TimeoutExpired(["1cv8"], 5))
+    assert _main(platform, ib, "run-epf", "--os-auth", "--epf", str(epf)) == 1
+    error = next(r.getMessage() for r in caplog.records if r.name == "onec_ops.cli")
+    assert "--os-auth" in error
+
+
 def test_without_user_conf_disables(platform, ib, epf, mocker, no_env):
     _write_conf(platform, "SystemLanguage=System\n" + suggested_line(ib.resolve()) + "\n")
     run = mocker.patch("onec_ops.lib.runner._execute", side_effect=_fake_run(0, "ok"))
