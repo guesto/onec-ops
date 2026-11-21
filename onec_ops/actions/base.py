@@ -48,9 +48,11 @@ class Action(ABC):
         return user, password
 
     def ib_auth_args(self, ns: argparse.Namespace) -> list[str]:
-        """Возвращает ключи /N и /P пользователя ИБ."""
+        """Возвращает ключи входа в ИБ: /WA+ (аутентификация ОС) или /N и /P."""
         if not self.requires_ib:
             return []
+        if getattr(ns, "os_auth", False):
+            return ["/WA+"]
         user = getattr(ns, "ib_user", None)
         password = getattr(ns, "ib_password", None)
         if password and not user:
@@ -63,7 +65,7 @@ class Action(ABC):
         return args
 
     def command_args(self, ns: argparse.Namespace, ctx: RunContext) -> list[str]:
-        """Собирает аргументы 1С с пользователем ИБ сразу после /F <ib>."""
+        """Собирает аргументы 1С с ключами входа сразу после /F <ib>."""
         args = self.build_1c_args(ns, ctx)
         auth = self.ib_auth_args(ns)
         if not auth:

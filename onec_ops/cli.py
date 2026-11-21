@@ -29,6 +29,12 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--ib-password", default=argparse.SUPPRESS, help="Пароль пользователя ИБ (/P)"
     )
+    parser.add_argument(
+        "--os-auth",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Аутентификация ОС (/WA+) вместо --ib-user / --ib-password (экспериментально)",
+    )
     parser.add_argument("--platform", type=Path, default=argparse.SUPPRESS, help="Путь к 1cv8")
     parser.add_argument(
         "--log-level", choices=_LOG_LEVELS, default=argparse.SUPPRESS, help="Уровень логирования"
@@ -52,17 +58,35 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def _resolve_ib_auth(ns: argparse.Namespace, action: Action) -> None:
-    """Выбирает пользователя ИБ: параметры CLI, затем переменные окружения."""
+    """Выбирает способ входа в ИБ.
+
+    --os-auth — аутентификация ОС, без пользователя и пароля. Иначе пользователь
+    из параметров CLI, затем из переменных окружения.
+    """
     user = getattr(ns, "ib_user", None)
     password = getattr(ns, "ib_password", None)
+    os_auth = getattr(ns, "os_auth", False)
     if not action.requires_ib:
-        if user is not None or password is not None:
+        if user is not None or password is not None or os_auth:
             raise OneCOpsError(
-                f"--ib-user / --ib-password неприменимы к {action.name}: у новой ИБ нет пользователей."
+                f"--ib-user / --ib-password / --os-auth неприменимы к {action.name}: "
+                "у новой ИБ нет пользователей."
             )
         ns.ib_user = ns.ib_password = None
+        ns.os_auth = False
         return
     legacy_user, legacy_password = action.legacy_ib_auth(ns)
+    if os_auth:
+        if any(value is not None for value in (user, password, legacy_user, legacy_password)):
+            raise OneCOpsError(
+                "--os-auth нельзя сочетать с --ib-user / --ib-password: выберите один способ входа."
+            )
+        if os.environ.get("ONEC_OPS_IB_USER") or os.environ.get("ONEC_OPS_IB_PASSWORD"):
+            logger.info("--os-auth: ONEC_OPS_IB_USER / ONEC_OPS_IB_PASSWORD не используются.")
+        ns.ib_user = ns.ib_password = None
+        ns.os_auth = True
+        return
+    ns.os_auth = False
     if user is not None and legacy_user is not None and user != legacy_user:
         raise OneCOpsError("--ib-user и --user заданы с разными значениями.")
     if password is not None and legacy_password is not None and password != legacy_password:

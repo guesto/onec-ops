@@ -266,3 +266,97 @@ def test_cli_create_ib_with_ib_user_fails(tmp_path, caplog):
         main(["create-ib", "--type", "file", "--path", str(tmp_path / "ib"), "--ib-user", "x"]) == 1
     )
     assert "неприменимы к create-ib" in caplog.text
+
+
+# Аутентификация ОС (/WA+)
+
+
+def test_ib_auth_args_os_auth():
+    assert DumpCfAction().ib_auth_args(_ns(os_auth=True, ib_user=None, ib_password=None)) == [
+        "/WA+"
+    ]
+
+
+@pytest.mark.parametrize("name", sorted(ACTION_ARGS))
+@pytest.mark.parametrize("position", ["before", "after"])
+def test_command_args_os_auth_after_ib(name, position, ctx):
+    common = ["--ib", "/ib", "--os-auth"]
+    if position == "before":
+        argv = [*common, name, *ACTION_ARGS[name]]
+    else:
+        argv = [name, *common, *ACTION_ARGS[name]]
+    ns = build_parser().parse_args(argv)
+    action = IB_ACTIONS[name]
+    _resolve_ib_auth(ns, action)
+    action.resolve_paths(ns)
+    args = action.command_args(ns, ctx)
+    index = args.index("/F")
+    assert args[index + 2] == "/WA+"
+    assert args.count("/WA+") == 1
+    assert "/N" not in args and "/P" not in args
+
+
+def test_without_os_auth_no_wa(ctx):
+    ns = build_parser().parse_args(["--ib", "/ib", "--ib-user", "a", "dump-cf", "--to", "a.cf"])
+    action = IB_ACTIONS["dump-cf"]
+    _resolve_ib_auth(ns, action)
+    assert ns.os_auth is False
+    assert "/WA+" not in action.command_args(ns, ctx)
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [["--ib-user", "a"], ["--ib-password", "x"], ["--ib-user", "a", "--ib-password", "x"]],
+)
+def test_os_auth_conflicts_with_ib_user(extra):
+    ns = build_parser().parse_args(["--ib", "/ib", "--os-auth", *extra, "dump-cf", "--to", "a.cf"])
+    with pytest.raises(OneCOpsError, match="--os-auth нельзя сочетать"):
+        _resolve_ib_auth(ns, IB_ACTIONS["dump-cf"])
+
+
+@pytest.mark.parametrize("name", ["open-designer", "open-enterprise"])
+def test_os_auth_conflicts_with_legacy_user(name):
+    ns = build_parser().parse_args(["--ib", "/ib", "--os-auth", name, "--user", "admin"])
+    with pytest.raises(OneCOpsError, match="--os-auth нельзя сочетать"):
+        _resolve_ib_auth(ns, IB_ACTIONS[name])
+
+
+def test_os_auth_ignores_environment(monkeypatch, ctx, caplog):
+    monkeypatch.setenv("ONEC_OPS_IB_USER", "env-user")
+    monkeypatch.setenv("ONEC_OPS_IB_PASSWORD", "env-secret")
+    ns = build_parser().parse_args(["--ib", "/ib", "--os-auth", "dump-cf", "--to", "a.cf"])
+    action = IB_ACTIONS["dump-cf"]
+    with caplog.at_level("INFO"):
+        _resolve_ib_auth(ns, action)
+    assert (ns.ib_user, ns.ib_password, ns.os_auth) == (None, None, True)
+    assert "env-user" not in action.command_args(ns, ctx)
+    assert "не используются" in caplog.text
+
+
+def test_create_ib_rejects_os_auth(tmp_path):
+    ns = build_parser().parse_args(
+        ["create-ib", "--type", "file", "--path", str(tmp_path), "--os-auth"]
+    )
+    action = next(item for item in get_actions() if item.name == "create-ib")
+    with pytest.raises(OneCOpsError, match="неприменимы к create-ib"):
+        _resolve_ib_auth(ns, action)
+
+
+def test_cli_dump_cf_with_os_auth(tmp_path, monkeypatch, mocker):
+    monkeypatch.chdir(tmp_path)
+    ib = tmp_path / "ib"
+    ib.mkdir()
+    (ib / "1Cv8.1CD").touch()
+    platform = tmp_path / "1cv8"
+    platform.touch()
+    platform.chmod(0o755)
+    run = mocker.patch(
+        "onec_ops.lib.runner._execute", return_value=subprocess.CompletedProcess([], 0, "", "")
+    )
+    mocker.patch("onec_ops.cli.check_environment")
+    mocker.patch("onec_ops.lib.runner.shutil.which", return_value="/usr/bin/xvfb-run")
+    argv = ["--platform", str(platform), "--ib", "ib", "--os-auth", "dump-cf", "--to", "base.cf"]
+    assert main(argv) == 0
+    command = run.call_args.args[0]
+    index = command.index("/F")
+    assert command[index + 1 : index + 3] == [str(ib), "/WA+"]
