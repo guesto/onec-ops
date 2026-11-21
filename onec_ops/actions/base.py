@@ -10,6 +10,7 @@ from pathlib import Path
 
 from onec_ops.lib.exceptions import OneCFailed, OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.storage import is_server_storage
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ class Action(ABC):
             ns.ib = Path(ns.ib).resolve()
         for name in self.path_args:
             value = getattr(ns, name, None)
-            if value:
+            if value and not is_server_storage(value):
                 setattr(ns, name, Path(value).resolve())
 
     def validate(self, ns: argparse.Namespace) -> None:

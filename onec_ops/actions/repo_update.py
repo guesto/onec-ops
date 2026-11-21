@@ -1,4 +1,4 @@
-"""Обновление конфигурации из файлового хранилища."""
+"""Обновление конфигурации из хранилища."""
 
 from __future__ import annotations
 
@@ -7,12 +7,19 @@ from pathlib import Path
 
 from onec_ops.lib.exceptions import OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.storage import (
+    STORAGE_HELP,
+    is_server_storage,
+    storage_arg,
+    storage_location,
+    validate_server_storage,
+)
 
 from .base import Action
 
 
 class RepoUpdateAction(Action):
-    """Обновляет конфигурацию базы из файлового хранилища 1С."""
+    """Обновляет конфигурацию базы из хранилища 1С."""
 
     name = "repo-update"
     help = "Обновить конфигурацию из хранилища"
@@ -21,7 +28,7 @@ class RepoUpdateAction(Action):
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Добавляет параметры хранилища и обновления."""
-        parser.add_argument("--storage", type=Path, required=True, help="Каталог хранилища")
+        parser.add_argument("--storage", type=storage_arg, required=True, help=STORAGE_HELP)
         parser.add_argument("--storage-user", help="Пользователь хранилища")
         parser.add_argument("--storage-password", help="Пароль пользователя хранилища")
         parser.add_argument("--version", type=int, help="Номер версии (по умолчанию последняя)")
@@ -32,6 +39,9 @@ class RepoUpdateAction(Action):
         super().validate(ns)
         if ns.storage is None:
             raise OneCOpsError("Обязательно укажите --storage.")
+        if is_server_storage(ns.storage):
+            validate_server_storage(ns.storage)
+            return
         path = Path(ns.storage)
         if not path.exists():
             raise OneCOpsError(f"Каталог --storage не существует: {path}")
@@ -47,7 +57,7 @@ class RepoUpdateAction(Action):
             "/DisableStartupDialogs",
             "/ConfigurationRepositoryUpdateCfg",
             "/ConfigurationRepositoryF",
-            str(Path(ns.storage).resolve()),
+            storage_location(ns.storage),
         ]
         if ns.storage_user:
             args += ["/ConfigurationRepositoryN", ns.storage_user]

@@ -1,4 +1,4 @@
-"""Добавление пользователя в файловое хранилище конфигурации."""
+"""Добавление пользователя в хранилище конфигурации."""
 
 from __future__ import annotations
 
@@ -7,6 +7,13 @@ from pathlib import Path
 
 from onec_ops.lib.exceptions import OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.storage import (
+    STORAGE_HELP,
+    is_server_storage,
+    storage_arg,
+    storage_location,
+    validate_server_storage,
+)
 
 from .base import Action
 
@@ -14,7 +21,7 @@ RIGHTS = ("ReadOnly", "LockObjects", "ManageConfigurationVersions", "Administrat
 
 
 class RepoAddUserAction(Action):
-    """Добавляет пользователя в файловое хранилище конфигурации 1С."""
+    """Добавляет пользователя в хранилище конфигурации 1С."""
 
     name = "repo-add-user"
     help = "Добавить пользователя в хранилище"
@@ -23,7 +30,7 @@ class RepoAddUserAction(Action):
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Добавляет параметры нового пользователя и администратора хранилища."""
-        parser.add_argument("--storage", type=Path, required=True, help="Каталог хранилища")
+        parser.add_argument("--storage", type=storage_arg, required=True, help=STORAGE_HELP)
         parser.add_argument("--user", required=True, help="Имя нового пользователя")
         parser.add_argument("--password", help="Пароль нового пользователя")
         parser.add_argument("--rights", required=True, choices=RIGHTS, help="Права пользователя")
@@ -40,11 +47,14 @@ class RepoAddUserAction(Action):
         super().validate(ns)
         if ns.storage is None:
             raise OneCOpsError("Обязательно укажите --storage.")
-        path = Path(ns.storage)
-        if not path.exists():
-            raise OneCOpsError(f"Каталог --storage не существует: {path}")
-        if not path.is_dir():
-            raise OneCOpsError(f"--storage должен быть каталогом: {path}")
+        if is_server_storage(ns.storage):
+            validate_server_storage(ns.storage)
+        else:
+            path = Path(ns.storage)
+            if not path.exists():
+                raise OneCOpsError(f"Каталог --storage не существует: {path}")
+            if not path.is_dir():
+                raise OneCOpsError(f"--storage должен быть каталогом: {path}")
         if not ns.user or not ns.user.strip():
             raise OneCOpsError("Имя пользователя --user не может быть пустым.")
 
@@ -56,7 +66,7 @@ class RepoAddUserAction(Action):
             str(ns.ib),
             "/DisableStartupDialogs",
             "/ConfigurationRepositoryF",
-            str(Path(ns.storage).resolve()),
+            storage_location(ns.storage),
         ]
         if ns.storage_user:
             args += ["/ConfigurationRepositoryN", ns.storage_user]
