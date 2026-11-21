@@ -7,12 +7,19 @@ from pathlib import Path
 
 from onec_ops.lib.exceptions import OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.storage import (
+    STORAGE_HELP,
+    is_server_storage,
+    storage_arg,
+    storage_location,
+    validate_server_storage,
+)
 
 from .base import Action
 
 
 class RepoBindAction(Action):
-    """Подключает базу к файловому хранилищу конфигурации 1С."""
+    """Подключает базу к хранилищу конфигурации 1С (файловому или серверному)."""
 
     name = "repo-bind"
     help = "Подключить базу к хранилищу"
@@ -21,7 +28,7 @@ class RepoBindAction(Action):
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Добавляет параметры подключения к хранилищу."""
-        parser.add_argument("--storage", type=Path, required=True, help="Каталог хранилища")
+        parser.add_argument("--storage", type=storage_arg, required=True, help=STORAGE_HELP)
         parser.add_argument("--storage-user", help="Пользователь хранилища")
         parser.add_argument("--storage-password", help="Пароль пользователя хранилища")
         parser.add_argument("--force", action="store_true", help="Перезаписать конфигурацию базы")
@@ -31,6 +38,9 @@ class RepoBindAction(Action):
         super().validate(ns)
         if ns.storage is None:
             raise OneCOpsError("Обязательно укажите --storage.")
+        if is_server_storage(ns.storage):
+            validate_server_storage(ns.storage)
+            return
         path = Path(ns.storage)
         if not path.exists():
             raise OneCOpsError(f"Каталог --storage не существует: {path}")
@@ -49,14 +59,16 @@ class RepoBindAction(Action):
             "/F",
             str(ns.ib),
             "/DisableStartupDialogs",
-            "/ConfigurationRepositoryBindCfg",
             "/ConfigurationRepositoryF",
-            str(Path(ns.storage).resolve()),
+            storage_location(ns.storage),
         ]
         if ns.storage_user:
             args += ["/ConfigurationRepositoryN", ns.storage_user]
         if ns.storage_password:
             args += ["/ConfigurationRepositoryP", ns.storage_password]
+        # Ключи команды (-force…) 1С читает только сразу после неё: после /P
+        # они молча игнорируются.
+        args += ["/ConfigurationRepositoryBindCfg"]
         if ns.force:
             args += ["-forceBindAlreadyBindedUser", "-forceReplaceCfg"]
         return args

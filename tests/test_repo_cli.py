@@ -10,7 +10,8 @@ from onec_ops.actions import get_actions
 from onec_ops.cli import build_parser, main
 from onec_ops.lib.exceptions import OneCOpsError
 
-REPO_ACTIONS = [action for action in get_actions() if action.name.startswith("repo-")]
+STORAGE_ACTIONS = {"repo-create", "repo-bind", "repo-update", "repo-add-user"}
+REPO_ACTIONS = [action for action in get_actions() if action.name in STORAGE_ACTIONS]
 ADD_USER_ARGS = ["--user", "dev", "--rights", "LockObjects"]
 
 
@@ -95,8 +96,10 @@ def test_cli_uses_runner_with_absolute_paths(
             if action.name == "repo-bind"
             else "/ConfigurationRepositoryUpdateCfg"
         )
-        expected = [flag, "/ConfigurationRepositoryF", str(storage)]
+        expected = ["/ConfigurationRepositoryF", str(storage)]
     expected += ["/ConfigurationRepositoryN", "admin", "/ConfigurationRepositoryP", "secret"]
+    if action.name in ("repo-bind", "repo-update"):
+        expected += [flag]
     if action.name == "repo-bind":
         expected += ["-forceBindAlreadyBindedUser", "-forceReplaceCfg"]
     elif action.name == "repo-update":

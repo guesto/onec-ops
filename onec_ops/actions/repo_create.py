@@ -1,4 +1,4 @@
-"""Создание файлового хранилища конфигурации."""
+"""Создание хранилища конфигурации (файлового или на сервере хранилища)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,13 @@ from pathlib import Path
 
 from onec_ops.lib.exceptions import OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.storage import (
+    STORAGE_HELP,
+    is_server_storage,
+    storage_arg,
+    storage_location,
+    validate_server_storage,
+)
 
 from .base import Action
 
@@ -16,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class RepoCreateAction(Action):
-    """Создаёт файловое хранилище конфигурации 1С."""
+    """Создаёт хранилище конфигурации 1С: в каталоге или на сервере хранилища."""
 
     name = "repo-create"
     help = "Создать хранилище конфигурации"
@@ -25,7 +32,7 @@ class RepoCreateAction(Action):
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Добавляет путь и учётные данные администратора хранилища."""
-        parser.add_argument("--storage", type=Path, required=True, help="Каталог хранилища")
+        parser.add_argument("--storage", type=storage_arg, required=True, help=STORAGE_HELP)
         parser.add_argument("--user", default="Администратор", help="Администратор хранилища")
         parser.add_argument("--password", help="Пароль администратора хранилища")
 
@@ -34,6 +41,9 @@ class RepoCreateAction(Action):
         super().validate(ns)
         if ns.storage is None:
             raise OneCOpsError("Обязательно укажите --storage.")
+        if is_server_storage(ns.storage):
+            validate_server_storage(ns.storage)
+            return
         path = Path(ns.storage).resolve()
         if path.exists() and not path.is_dir():
             raise OneCOpsError(f"--storage должен быть каталогом: {path}")
@@ -58,7 +68,7 @@ class RepoCreateAction(Action):
             str(ns.ib),
             "/DisableStartupDialogs",
             "/ConfigurationRepositoryF",
-            str(Path(ns.storage).resolve()),
+            storage_location(ns.storage),
             "/ConfigurationRepositoryCreate",
         ]
         if ns.user:
@@ -68,7 +78,9 @@ class RepoCreateAction(Action):
         return args
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
-        """Создаёт недостающие каталоги хранилища."""
+        """Создаёт недостающие каталоги файлового хранилища."""
+        if is_server_storage(ns.storage):
+            return
         path = Path(ns.storage).resolve()
         try:
             path.mkdir(parents=True, exist_ok=True)

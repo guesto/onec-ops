@@ -12,7 +12,7 @@
 - Проверка: [check-modules](#check-modules) · [check-config](#check-config)
 - Расширения: [list-extensions](#list-extensions) · [check-extension](#check-extension) · [delete-extension](#delete-extension)
 - Обработки и отчёты: [run-epf](#run-epf) · [dump-epf](#dump-epf) · [load-epf](#load-epf)
-- Хранилище: [repo-create](#repo-create) · [repo-bind](#repo-bind) · [repo-update](#repo-update) · [repo-add-user](#repo-add-user)
+- Хранилище: [repo-create](#repo-create) · [repo-bind](#repo-bind) · [repo-update](#repo-update) · [repo-add-user](#repo-add-user) · [repo-unbind](#repo-unbind) · [repo-delete](#repo-delete)
 - GUI: [open-designer](#open-designer) · [open-enterprise](#open-enterprise)
 - Навык: [install-skill](#install-skill)
 
@@ -708,7 +708,8 @@ Dry-run `dump-dt` файл бэкапа не создаёт: для `restore-dt`
 
 ## repo-create
 
-Создаёт файловое хранилище конфигурации на основе существующей файловой ИБ.
+Создаёт хранилище конфигурации на основе существующей файловой ИБ: в каталоге
+или на сервере хранилища.
 
 ### Синтаксис
 
@@ -720,7 +721,7 @@ onec-ops repo-create --ib PATH --storage PATH [--user NAME] [--password PWD]
 
 ```text
 --ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
---storage PATH          Каталог файлового хранилища (обязательный)
+--storage PATH|URL      Каталог хранилища или адрес сервера (обязательный)
 --user NAME             Администратор хранилища (по умолчанию «Администратор»)
 --password PWD          Пароль администратора (опционально)
 ```
@@ -745,11 +746,30 @@ onec-ops repo-create --ib ./base1c --storage ./storage1c --user admin --password
 onec-ops --ib ./base1c --dry-run repo-create --storage ./storage1c
 ```
 
-Поддерживается только файловое хранилище, без `crserver`, `tcp://` и `http://`.
+### Серверное хранилище
+
+Все команды `repo-*` принимают в `--storage` адрес сервера хранилища вместо каталога:
+`tcp://сервер[:порт]/имя` (`crserver`, порт по умолчанию 1542) или
+`http://` / `https://` (веб-публикация хранилища, вида
+`http://сервер/путь/repo.1ccr/имя`). Адрес передаётся в
+`/ConfigurationRepositoryF` как есть. onec-ops проверяет только, что в адресе есть
+сервер и имя хранилища; проверки каталога (существование, пустота, права,
+создание в `repo-create`) для адреса не выполняются. Несуществующее хранилище,
+неверный пароль или недоступный сервер — код 1 с сообщением 1С.
+
+```sh
+onec-ops repo-create --ib ./base1c --storage tcp://localhost:1542/main --password secret
+onec-ops repo-add-user --ib ./base1c --storage tcp://localhost:1542/main \
+    --storage-user Администратор --storage-password secret --user dev --rights LockObjects
+onec-ops repo-bind --ib ./base2c --storage tcp://localhost:1542/main \
+    --storage-user dev --storage-password devpw
+onec-ops repo-update --ib ./base2c --storage http://localhost/storage/repo.1ccr/main \
+    --storage-user dev --storage-password devpw
+```
 
 ## repo-bind
 
-Подключает существующую файловую ИБ к файловому хранилищу конфигурации.
+Подключает существующую файловую ИБ к хранилищу конфигурации (каталог или сервер).
 
 ### Синтаксис
 
@@ -762,7 +782,7 @@ onec-ops repo-bind --ib PATH --storage PATH
 
 ```text
 --ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
---storage PATH          Существующий непустой каталог хранилища (обязательный)
+--storage PATH|URL      Непустой каталог хранилища или адрес сервера (обязательный)
 --storage-user NAME     Пользователь хранилища (опционально)
 --storage-password PWD  Пароль пользователя хранилища (опционально)
 --force                 Перезаписать конфигурацию базы (-forceReplaceCfg)
@@ -771,8 +791,9 @@ onec-ops repo-bind --ib PATH --storage PATH
 ### Поведение
 
 1. Проверяет ИБ и существующий непустой каталог хранилища.
-2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryBindCfg`
-   и `/ConfigurationRepositoryF <storage>`.
+2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryF <storage>`,
+   учётные данные и последним — `/ConfigurationRepositoryBindCfg` с ключами
+   (`--force` добавляет `-forceBindAlreadyBindedUser -forceReplaceCfg`): 1С читает ключи только сразу после команды.
 3. Непустые учётные данные передаёт через `/ConfigurationRepositoryN` и
    `/ConfigurationRepositoryP`; `--force` добавляет `-forceReplaceCfg`.
 4. Пути становятся абсолютными; пароль маскируется в журнале команды.
@@ -791,7 +812,7 @@ Dry-run `repo-create` создаёт только каталог: для под�
 
 ## repo-update
 
-Обновляет конфигурацию существующей файловой ИБ из файлового хранилища.
+Обновляет конфигурацию существующей файловой ИБ из хранилища (каталог или сервер).
 
 ### Синтаксис
 
@@ -805,7 +826,7 @@ onec-ops repo-update --ib PATH --storage PATH
 
 ```text
 --ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
---storage PATH          Существующий каталог хранилища (обязательный)
+--storage PATH|URL      Каталог хранилища или адрес сервера (обязательный)
 --storage-user NAME     Пользователь хранилища (опционально)
 --storage-password PWD  Пароль пользователя хранилища (опционально)
 --version N             Целочисленный номер версии (по умолчанию последняя)
@@ -815,8 +836,9 @@ onec-ops repo-update --ib PATH --storage PATH
 ### Поведение
 
 1. Проверяет ИБ и существование каталога хранилища.
-2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryUpdateCfg`
-   и `/ConfigurationRepositoryF <storage>`.
+2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs /ConfigurationRepositoryF <storage>`,
+   учётные данные и последним — `/ConfigurationRepositoryUpdateCfg` с ключами
+   (`--version N` добавляет `-v N`, `--force` — `-force`): 1С читает ключи только сразу после команды.
 3. Непустые учётные данные передаёт через `/ConfigurationRepositoryN` и
    `/ConfigurationRepositoryP`; ненулевой `--version N` добавляет `-v N`,
    `--force` добавляет `-force`.
@@ -833,7 +855,7 @@ onec-ops --ib ./base1c --dry-run repo-update --storage ./storage1c
 
 ## repo-add-user
 
-Добавляет пользователя в файловое хранилище конфигурации от имени
+Добавляет пользователя в хранилище конфигурации (каталог или сервер) от имени
 администратора хранилища.
 
 ### Синтаксис
@@ -849,7 +871,7 @@ onec-ops repo-add-user --ib PATH --storage PATH --user NAME --rights RIGHTS
 ```text
 --ib PATH               Файловая ИБ с 1Cv8.1CD: подключённая к этому хранилищу
                         или не подключённая ни к какому (обязательный)
---storage PATH          Существующий каталог хранилища (обязательный)
+--storage PATH|URL      Каталог хранилища или адрес сервера (обязательный)
 --user NAME             Имя нового пользователя (обязательный)
 --password PWD          Пароль нового пользователя (опционально)
 --rights RIGHTS         ReadOnly | LockObjects | ManageConfigurationVersions |
@@ -887,6 +909,83 @@ onec-ops --ib ./base1c --dry-run repo-add-user --storage ./storage1c --user Те
 ```
 
 Так к одному хранилищу подключаются несколько баз: у каждой свой пользователь.
+
+## repo-unbind
+
+Отключает файловую ИБ от хранилища конфигурации (файлового или серверного).
+
+### Синтаксис
+
+```sh
+onec-ops repo-unbind --ib PATH [--storage-user NAME] [--storage-password PWD] [--force]
+```
+
+### Параметры
+
+```text
+--ib PATH               Существующая файловая ИБ с 1Cv8.1CD (обязательный)
+--storage-user NAME     Пользователь хранилища (опционально)
+--storage-password PWD  Пароль пользователя хранилища (опционально)
+--force                 Отключить без аутентификации в хранилище,
+                        игнорируя захваченные и изменённые объекты (-force)
+```
+
+### Поведение
+
+1. `--storage` не нужен: база помнит, к какому хранилищу подключена.
+2. Передаёт `DESIGNER /F <ib> /DisableStartupDialogs`, учётные данные через
+   `/ConfigurationRepositoryN` и `/ConfigurationRepositoryP`, затем
+   `/ConfigurationRepositoryUnbindCfg [-force]`.
+3. Без учётных данных и без `--force` 1С завершается с кодом 1
+   («Соединение с хранилищем конфигурации не установлено»).
+4. Неподключённая база — код 0 без сообщений.
+5. Пароль маскируется в журнале команды; dry-run показывает команду без запуска 1С.
+
+### Примеры
+
+```sh
+onec-ops repo-unbind --ib ./base2c --storage-user dev --storage-password devpw
+onec-ops repo-unbind --ib ./base2c --force
+```
+
+## repo-delete
+
+Удаляет файловое хранилище конфигурации. У 1С и crserver нет команды
+удаления хранилища, поэтому `repo-delete` удаляет каталог и 1С не запускает.
+
+### Синтаксис
+
+```sh
+onec-ops repo-delete --storage PATH [--yes]
+```
+
+### Параметры
+
+```text
+--storage PATH          Каталог файлового хранилища (обязательный)
+--yes                   Удалить без подтверждения (для CI)
+```
+
+### Поведение
+
+1. Каталог должен существовать, не быть символической ссылкой и содержать
+   `1cv8ddb.1CD`; иначе — ошибка, ничего не удаляется.
+2. Адрес сервера (`tcp://`, `http://`, `https://`) — ошибка с подсказкой:
+   серверное хранилище — подкаталог с его именем в каталоге данных crserver
+   (ключ `-d`), удаляйте его вручную при остановленном сервере.
+3. Предупреждает, что история версий будет потеряна, а подключённые базы
+   останутся привязаны к несуществующему хранилищу: отключите их заранее
+   через `repo-unbind`.
+4. Запрашивает подтверждение `Y`; без терминала требует `--yes`.
+5. Dry-run выполняет проверки и ничего не удаляет. `--ib` и платформа 1С не нужны.
+
+### Примеры
+
+```sh
+onec-ops repo-unbind --ib ./base1c --storage-user Администратор --storage-password secret
+onec-ops repo-delete --storage ./storage1c
+onec-ops repo-delete --storage ./storage1c --yes
+```
 
 ## list-extensions
 

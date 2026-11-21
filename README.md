@@ -11,7 +11,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 
 ## Статус
 
-**Текущая версия: v0.10.0** (2026-11-18).
+**Текущая версия: v0.11.0** (2026-11-21).
 
 Реализовано:
 - Кроссплатформенный запуск 1С (Linux DISPLAY / xvfb-run, Windows).
@@ -23,7 +23,8 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `dump-epf` / `load-epf` — разборка и сборка внешних обработок `.epf` и отчётов `.erf` в XML.
 - `run-epf` — выполнить обработку в режиме Предприятия без окна и вывести её сообщения.
 - `dump-dt` / `restore-dt` — резервное копирование и восстановление базы через `.dt`.
-- `repo-create` / `repo-bind` / `repo-update` / `repo-add-user` — файловое хранилище конфигурации.
+- `repo-create` / `repo-bind` / `repo-update` / `repo-add-user` — хранилище конфигурации: файловое или на сервере хранилища (`tcp://`, `http://`).
+- `repo-unbind` / `repo-delete` — отключение базы от хранилища и удаление файлового хранилища.
 - `list-extensions` / `check-extension` / `delete-extension` — список, проверка и удаление расширений.
 - `update-db` — применение загруженной конфигурации к базе данных.
 - `install-skill` — установка и проверка Agent Skill у агентов.
@@ -296,7 +297,7 @@ Dry-run проверяет ИБ и пути, для выгрузки созда�
 но не создаёт `.dt` и не запускает 1С. Для dry-run восстановления нужен
 уже существующий непустой `.dt`; подтверждение действует так же, как при запуске.
 
-### Файловое хранилище конфигурации
+### Хранилище конфигурации
 
     onec-ops repo-create --ib /path/to/ib --storage /path/to/storage
     onec-ops repo-bind --ib /path/to/other-ib --storage /path/to/storage --storage-user Администратор
@@ -331,7 +332,24 @@ Dry-run проверяет ИБ и пути, для выгрузки созда�
 Dry-run проверяет ИБ и пути, показывает команду с абсолютными путями, но
 не запускает 1С. Для `repo-create` он создаёт только каталог: для последующего
 `repo-bind` нужно уже существующее непустое хранилище.
-Поддерживается только файловое хранилище, без `crserver` и удалённых адресов.
+Вместо каталога `--storage` принимает адрес сервера хранилища (`crserver`)
+`tcp://сервер[:порт]/имя_хранилища` или веб-публикации `http://` / `https://`
+(например, `http://localhost/storage/repo.1ccr/имя_хранилища`).
+Адрес передаётся в `/ConfigurationRepositoryF` без изменений и проверяется
+только на форму (сервер и имя хранилища); проверки каталога для него не выполняются.
+
+    onec-ops repo-create --ib /path/to/ib --storage tcp://localhost:1542/main
+    onec-ops repo-bind --ib /path/to/other-ib --storage tcp://localhost:1542/main --storage-user Разработчик2
+    onec-ops repo-update --ib /path/to/other-ib --storage http://localhost/storage/repo.1ccr/main --storage-user Разработчик2
+
+`repo-unbind` отключает базу от хранилища: адрес не нужен, `--force` отключает
+без аутентификации. `repo-delete` удаляет файловое хранилище (каталог с
+`1cv8ddb.1CD`) после подтверждения или с `--yes`, 1С не запускает. Серверное
+хранилище программно не удаляется: это подкаталог в каталоге данных crserver.
+
+    onec-ops repo-unbind --ib /path/to/other-ib --storage-user Разработчик2
+    onec-ops repo-delete --storage /path/to/storage
+
 Подробнее: [справочник команд](references/commands.md#repo-create).
 
 ### Общие параметры

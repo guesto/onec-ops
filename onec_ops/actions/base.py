@@ -10,6 +10,7 @@ from pathlib import Path
 
 from onec_ops.lib.exceptions import OneCFailed, OneCOpsError
 from onec_ops.lib.runner import RunContext
+from onec_ops.lib.storage import is_server_storage
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,8 @@ class Action(ABC):
     path_args: tuple[str, ...] = ()
     default_timeout: int = 600
     """Таймаут в секундах, если --timeout не задан."""
+    runs_1c: bool = True
+    """Запускает ли действие 1С; если нет, CLI вызывает execute()."""
     legacy_ib_auth_options: bool = False
     """Принимает ли действие устаревшие --user / --password для пользователя ИБ."""
 
@@ -79,7 +82,7 @@ class Action(ABC):
             ns.ib = Path(ns.ib).resolve()
         for name in self.path_args:
             value = getattr(ns, name, None)
-            if value:
+            if value and not is_server_storage(value):
                 setattr(ns, name, Path(value).resolve())
 
     def validate(self, ns: argparse.Namespace) -> None:
@@ -91,6 +94,9 @@ class Action(ABC):
             raise OneCOpsError("Для этого действия обязательно укажите --ib.")
         if not (Path(ib) / "1Cv8.1CD").is_file():
             raise OneCOpsError(f"Файловая ИБ --ib не содержит файл 1Cv8.1CD: {ib}")
+
+    def execute(self, ns: argparse.Namespace) -> None:
+        """Выполняет действие без запуска 1С (для runs_1c = False)."""
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
         """Выполняет подготовку перед запуском."""
