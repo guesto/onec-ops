@@ -20,6 +20,8 @@ from .open_enterprise import OpenEnterpriseAction
 from .repo_add_user import RepoAddUserAction
 from .repo_bind import RepoBindAction
 from .repo_create import RepoCreateAction
+from .repo_delete import RepoDeleteAction
+from .repo_unbind import RepoUnbindAction
 from .repo_update import RepoUpdateAction
 from .restore_dt import RestoreDtAction
 from .run_epf import RunEpfAction
@@ -45,6 +47,8 @@ def get_actions() -> list[Action]:
         RepoBindAction(),
         RepoUpdateAction(),
         RepoAddUserAction(),
+        RepoUnbindAction(),
+        RepoDeleteAction(),
         ListExtensionsAction(),
         CheckExtensionAction(),
         DeleteExtensionAction(),

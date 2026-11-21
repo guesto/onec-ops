@@ -17,7 +17,8 @@ from onec_ops.lib.storage import (
     validate_server_storage,
 )
 
-REPO_ACTIONS = [action for action in get_actions() if action.name.startswith("repo-")]
+STORAGE_ACTIONS = {"repo-create", "repo-bind", "repo-update", "repo-add-user"}
+REPO_ACTIONS = [action for action in get_actions() if action.name in STORAGE_ACTIONS]
 ADD_USER_ARGS = ["--user", "dev", "--rights", "LockObjects"]
 URLS = [
     "tcp://localhost:1542/main",

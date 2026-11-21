@@ -24,6 +24,7 @@ CLI-утилита и Agent Skill для автоматизации пакетн
 - `run-epf` — выполнить обработку в режиме Предприятия без окна и вывести её сообщения.
 - `dump-dt` / `restore-dt` — резервное копирование и восстановление базы через `.dt`.
 - `repo-create` / `repo-bind` / `repo-update` / `repo-add-user` — хранилище конфигурации: файловое или на сервере хранилища (`tcp://`, `http://`).
+- `repo-unbind` / `repo-delete` — отключение базы от хранилища и удаление файлового хранилища.
 - `list-extensions` / `check-extension` / `delete-extension` — список, проверка и удаление расширений.
 - `update-db` — применение загруженной конфигурации к базе данных.
 - `install-skill` — установка и проверка Agent Skill у агентов.
@@ -340,6 +341,14 @@ Dry-run проверяет ИБ и пути, показывает команду
     onec-ops repo-create --ib /path/to/ib --storage tcp://localhost:1542/main
     onec-ops repo-bind --ib /path/to/other-ib --storage tcp://localhost:1542/main --storage-user Разработчик2
     onec-ops repo-update --ib /path/to/other-ib --storage http://localhost/storage/repo.1ccr/main --storage-user Разработчик2
+
+`repo-unbind` отключает базу от хранилища: адрес не нужен, `--force` отключает
+без аутентификации. `repo-delete` удаляет файловое хранилище (каталог с
+`1cv8ddb.1CD`) после подтверждения или с `--yes`, 1С не запускает. Серверное
+хранилище программно не удаляется: это подкаталог в каталоге данных crserver.
+
+    onec-ops repo-unbind --ib /path/to/other-ib --storage-user Разработчик2
+    onec-ops repo-delete --storage /path/to/storage
 
 Подробнее: [справочник команд](references/commands.md#repo-create).
 

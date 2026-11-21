@@ -27,6 +27,21 @@
   адрес без сервера или имени хранилища — ошибка до запуска 1С. Проверено
   вживую на crserver 8.5.1.1529 по tcp:// и через веб-публикацию http://.
 
+- `repo-unbind` — отключить базу от хранилища (`/ConfigurationRepositoryUnbindCfg`,
+  `--force` → `-force`); адрес хранилища не нужен.
+- `repo-delete` — удалить файловое хранилище (каталог с `1cv8ddb.1CD`) после
+  подтверждения или с `--yes`; 1С не запускается. Для адреса сервера — ошибка
+  с подсказкой: у 1С и crserver нет команды удаления хранилища.
+
+
+### Fixed
+
+- `repo-bind --force` больше не падает с «Конфигурация не пустая!» на непустой
+  базе (#27): ключи `-forceBindAlreadyBindedUser -forceReplaceCfg` стояли после
+  `/ConfigurationRepositoryP` и игнорировались 1С. Теперь
+  `/ConfigurationRepositoryBindCfg` и `/ConfigurationRepositoryUpdateCfg` идут
+  последними, сразу со своими ключами (для `repo-update` — `-v`, `-force`).
+
 ## [0.10.0] — 2026-11-18
 
 ### Added

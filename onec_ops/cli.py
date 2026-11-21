@@ -152,6 +152,11 @@ def main(argv: list[str] | None = None) -> int:
         if ns.dry_run:
             logger.info("%s", describe_config(ns.config))
         action = next(item for item in get_actions() if item.name == ns.action)
+        if not action.runs_1c:
+            action.resolve_paths(ns)
+            action.validate(ns)
+            action.execute(ns)
+            return 0
         _resolve_ib_auth(ns, action)
         if ns.timeout is None:
             ns.timeout = action.default_timeout

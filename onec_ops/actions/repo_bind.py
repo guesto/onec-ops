@@ -59,7 +59,6 @@ class RepoBindAction(Action):
             "/F",
             str(ns.ib),
             "/DisableStartupDialogs",
-            "/ConfigurationRepositoryBindCfg",
             "/ConfigurationRepositoryF",
             storage_location(ns.storage),
         ]
@@ -67,6 +66,9 @@ class RepoBindAction(Action):
             args += ["/ConfigurationRepositoryN", ns.storage_user]
         if ns.storage_password:
             args += ["/ConfigurationRepositoryP", ns.storage_password]
+        # Ключи команды (-force…) 1С читает только сразу после неё: после /P
+        # они молча игнорируются.
+        args += ["/ConfigurationRepositoryBindCfg"]
         if ns.force:
             args += ["-forceBindAlreadyBindedUser", "-forceReplaceCfg"]
         return args

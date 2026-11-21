@@ -27,6 +27,8 @@ class Action(ABC):
     path_args: tuple[str, ...] = ()
     default_timeout: int = 600
     """Таймаут в секундах, если --timeout не задан."""
+    runs_1c: bool = True
+    """Запускает ли действие 1С; если нет, CLI вызывает execute()."""
     legacy_ib_auth_options: bool = False
     """Принимает ли действие устаревшие --user / --password для пользователя ИБ."""
 
@@ -92,6 +94,9 @@ class Action(ABC):
             raise OneCOpsError("Для этого действия обязательно укажите --ib.")
         if not (Path(ib) / "1Cv8.1CD").is_file():
             raise OneCOpsError(f"Файловая ИБ --ib не содержит файл 1Cv8.1CD: {ib}")
+
+    def execute(self, ns: argparse.Namespace) -> None:
+        """Выполняет действие без запуска 1С (для runs_1c = False)."""
 
     def pre_run(self, ns: argparse.Namespace, ctx: RunContext) -> None:
         """Выполняет подготовку перед запуском."""

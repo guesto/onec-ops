@@ -55,7 +55,6 @@ class RepoUpdateAction(Action):
             "/F",
             str(ns.ib),
             "/DisableStartupDialogs",
-            "/ConfigurationRepositoryUpdateCfg",
             "/ConfigurationRepositoryF",
             storage_location(ns.storage),
         ]
@@ -63,6 +62,9 @@ class RepoUpdateAction(Action):
             args += ["/ConfigurationRepositoryN", ns.storage_user]
         if ns.storage_password:
             args += ["/ConfigurationRepositoryP", ns.storage_password]
+        # Ключи команды (-force…) 1С читает только сразу после неё: после /P
+        # они молча игнорируются.
+        args += ["/ConfigurationRepositoryUpdateCfg"]
         if ns.version:
             args += ["-v", str(ns.version)]
         if ns.force:

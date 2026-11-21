@@ -72,6 +72,8 @@ CLI `onec-ops` запускает толстый клиент `1cv8` в паке
 | Подключить базу к хранилищу | `onec-ops repo-bind --ib IB --storage DIR --storage-user Имя` |
 | Обновить базу из хранилища | `onec-ops repo-update --ib IB --storage DIR --storage-user Имя` |
 | Добавить пользователя хранилища | `onec-ops repo-add-user --ib IB --storage DIR --storage-user Админ --user Имя --rights LockObjects` |
+| Отключить базу от хранилища | `onec-ops repo-unbind --ib IB --storage-user Имя` |
+| Удалить файловое хранилище (разрушает) | `onec-ops repo-delete --storage DIR` |
 | Выполнить обработку без окна | `onec-ops run-epf --ib IB --epf file.epf [--param СТРОКА]` |
 | Открыть Конфигуратор | `onec-ops open-designer --ib IB` |
 | Открыть клиент 1С | `onec-ops open-enterprise --ib IB [--execute file.epf]` |
@@ -145,6 +147,9 @@ CLI `onec-ops` запускает толстый клиент `1cv8` в паке
 - НЕ подключай вторую базу через `repo-bind --force` под тем же
   пользователем: первая база будет отвязана.
 - `--ib` у `repo-add-user` — база этого хранилища или не подключённая ни к какому.
+- `repo-unbind` — без `--storage`; `--force` — без входа в хранилище.
+- `repo-delete` — только файловое (каталог с `1cv8ddb.1CD`), с подтверждением;
+  сначала `repo-unbind` баз. Серверное — вручную в каталоге данных crserver.
 - `repo-bind` и `repo-update` меняют только конфигурацию ИБ; применить её
   к БД — следующим шагом `update-db`.
 
