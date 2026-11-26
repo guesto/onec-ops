@@ -4,18 +4,20 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 import tomllib
 from pathlib import Path
 
 from platformdirs import user_config_dir
 
-from .exceptions import OneCOpsError
+from .exceptions import OneCOpsError, PlatformNotFound
 
 logger = logging.getLogger(__name__)
 
-_LINUX_PLATFORM = Path("/opt/1cv8/x86_64/8.5.1.1343/1cv8")
-_WINDOWS_PLATFORM = Path(r"C:\Program Files\1cv8\8.5.1.1343\bin\1cv8.exe")
+_LINUX_PLATFORM_ROOT = Path("/opt/1cv8/x86_64")
+_WINDOWS_PLATFORM_ROOT = Path(r"C:\Program Files\1cv8")
+_VERSION_RE = re.compile(r"\d+(?:\.\d+){3}")
 
 
 def default_config_path() -> Path:
@@ -65,5 +67,52 @@ def resolve_platform(cli_path: Path | None, config: dict) -> Path:
     elif config_path := config.get("platform"):
         platform_path = Path(config_path)
     else:
-        return _WINDOWS_PLATFORM if sys.platform == "win32" else _LINUX_PLATFORM
+        return find_latest_platform()
     return platform_path.absolute()
+
+
+def _platform_layout() -> tuple[Path, Path]:
+    """Каталог с версиями платформы и путь к 1cv8 внутри каталога версии."""
+    if sys.platform == "win32":
+        return _WINDOWS_PLATFORM_ROOT, Path("bin") / "1cv8.exe"
+    return _LINUX_PLATFORM_ROOT, Path("1cv8")
+
+
+def _is_executable(path: Path) -> bool:
+    return path.is_file() and (sys.platform == "win32" or os.access(path, os.X_OK))
+
+
+def find_latest_platform() -> Path:
+    """Находит самую новую установленную версию платформы 1С.
+
+    Linux: ``/opt/1cv8/x86_64/<версия>/1cv8``.
+    Windows: ``C:\\Program Files\\1cv8\\<версия>\\bin\\1cv8.exe``.
+    Версии сравниваются как числа (8.5.10 новее 8.5.9). Каталоги без
+    исполняемого файла платформы пропускаются.
+    """
+    root, executable = _platform_layout()
+    candidates: list[tuple[tuple[int, ...], Path]] = []
+    try:
+        entries = list(root.iterdir())
+    except OSError:
+        entries = []
+    for entry in entries:
+        if not _VERSION_RE.fullmatch(entry.name):
+            continue
+        platform_path = entry / executable
+        if _is_executable(platform_path):
+            version = tuple(int(part) for part in entry.name.split("."))
+            candidates.append((version, platform_path))
+    if not candidates:
+        raise PlatformNotFound(
+            f"Платформа 1С не найдена: в {root} нет установленных версий "
+            f"(ожидается {root / '<версия>' / executable}). "
+            "Укажите путь через --platform, ONEC_OPS_PLATFORM или ключ platform в конфиге."
+        )
+    version, platform_path = max(candidates)
+    logger.info(
+        "Платформа 1С: %s (самая новая из установленных: %s)",
+        ".".join(map(str, version)),
+        platform_path,
+    )
+    return platform_path
