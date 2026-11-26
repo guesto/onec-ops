@@ -11,7 +11,7 @@ from pathlib import Path
 
 from platformdirs import user_config_dir
 
-from .exceptions import OneCOpsError, PlatformNotFound
+from .exceptions import OneCOpsError
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,8 @@ def find_latest_platform() -> Path:
     Linux: ``/opt/1cv8/x86_64/<версия>/1cv8``.
     Windows: ``C:\\Program Files\\1cv8\\<версия>\\bin\\1cv8.exe``.
     Версии сравниваются как числа (8.5.10 новее 8.5.9). Каталоги без
-    исполняемого файла платформы пропускаются.
+    исполняемого файла платформы пропускаются. Если версий нет, возвращается
+    путь-шаблон ``<каталог>/<версия>/...``: его отклонит проверка платформы.
     """
     root, executable = _platform_layout()
     candidates: list[tuple[tuple[int, ...], Path]] = []
@@ -104,11 +105,11 @@ def find_latest_platform() -> Path:
             version = tuple(int(part) for part in entry.name.split("."))
             candidates.append((version, platform_path))
     if not candidates:
-        raise PlatformNotFound(
-            f"Платформа 1С не найдена: в {root} нет установленных версий "
-            f"(ожидается {root / '<версия>' / executable}). "
-            "Укажите путь через --platform, ONEC_OPS_PLATFORM или ключ platform в конфиге."
-        )
+        # Ошибку «платформа не найдена» выдаёт проверка окружения при запуске 1С,
+        # после проверки аргументов: здесь возвращаем путь-шаблон для сообщения.
+        placeholder = root / "<версия>" / executable
+        logger.debug("В %s нет установленных версий платформы 1С", root)
+        return placeholder
     version, platform_path = max(candidates)
     logger.info(
         "Платформа 1С: %s (самая новая из установленных: %s)",

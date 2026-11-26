@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from onec_ops.cli import main
 from onec_ops.lib import config
 from onec_ops.lib.config import load_config, resolve_platform
-from onec_ops.lib.exceptions import PlatformNotFound
 
 CLI = Path("/cli/1cv8")
 ENV = "/env/1cv8"
@@ -104,16 +104,24 @@ def test_logs_chosen_version(platform_root, caplog):
     assert "8.5.4.2072" in caplog.text
 
 
-def test_no_platform_installed(platform_root):
-    with pytest.raises(PlatformNotFound, match="--platform"):
-        resolve_platform(None, {})
+def test_no_platform_installed_returns_placeholder(platform_root):
+    path = resolve_platform(None, {})
+    assert path == platform_root / "<версия>" / config._platform_layout()[1]
+    assert not path.exists()
 
 
 def test_missing_platform_root(monkeypatch, tmp_path):
     attr = "_WINDOWS_PLATFORM_ROOT" if config.sys.platform == "win32" else "_LINUX_PLATFORM_ROOT"
     monkeypatch.setattr(config, attr, tmp_path / "missing")
-    with pytest.raises(PlatformNotFound):
-        resolve_platform(None, {})
+    assert not resolve_platform(None, {}).exists()
+
+
+def test_cli_reports_missing_platform(platform_root, caplog):
+    missing_config = platform_root / "missing.toml"
+    args = ["create-ib", "--config", str(missing_config), "--type", "file"]
+    assert main([*args, "--path", str(platform_root / "ib")]) == 1
+    assert "Платформа 1С не найдена" in caplog.text
+    assert "<версия>" in caplog.text
 
 
 def test_load_config_missing_file(tmp_path):
